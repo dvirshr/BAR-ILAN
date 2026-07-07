@@ -285,17 +285,21 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 
-/* ── WEEKLY READABILITY FIX (v17) ── */
-.wk-col{background:#242424!important}
-.wk-body{background:#242424}
-.tr-sec{background:#2A2A2A}
-.tr-hd-s{background:#333!important}
-.tr-nm{color:#F5F5F5!important;font-weight:600}
-.task-sum-row{color:#EDEDED!important;background:#242424}
-.task-sum-row span{color:inherit}
-.wk-hd .wlbl{font-weight:700}
-.wdates{color:#F0F0F0;background:#1E1E1E;border:1px solid #4A4A4A}
-.wk-notes{color:#EDEDED;background:#1E1E1E;border:1px solid #4A4A4A}
+
+/* ── WEEKLY GRAPHITE THEME (v17) ── */
+.weeks-grid .wk-col{background:#1c1c1e!important;border:1px solid #3a3a3c!important}
+.weeks-grid .wk-body{background:#1c1c1e!important}
+.weeks-grid .tr-sec{background:#2c2c2e!important;border:1px solid #48484a!important}
+.weeks-grid .tr-hd-s{background:#3a3a3c!important}
+.weeks-grid .tr-nm{color:#ffffff!important;font-weight:700!important}
+.weeks-grid .tr-nm *{color:#ffffff!important}
+.weeks-grid .task-sum-row{background:#1c1c1e!important;color:#f2f2f7!important;border-bottom:1px solid #3a3a3c!important}
+.weeks-grid .task-sum-row span{color:#f2f2f7!important}
+.weeks-grid .task-sum-row .pbadge{color:inherit!important}
+.weeks-grid .wk-hd .wlbl{color:#ffffff!important;font-weight:800!important}
+.weeks-grid .wk-stats-row{color:#d1d1d6!important}
+.weeks-grid .wdates,.weeks-grid .wk-notes{color:#f2f2f7!important;background:#111!important;border:1px solid #48484a!important}
+.weeks-grid .wk-notes::placeholder,.weeks-grid .wdates::placeholder{color:#8e8e93!important}
 </style>
 </head>
 <body>
