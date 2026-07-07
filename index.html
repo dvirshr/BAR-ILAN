@@ -1516,8 +1516,7 @@ function openWhatsAppModal(ci,cti){
       const ds=b.daily[wid][di];if(!ds||!ds.trades)return;
       const tasks=(ds.trades[ti]||[]).filter(t=>t&&t.text&&t.text.trim());
       if(!tasks.length)return;
-      dayLines.push('*'+(zh?zhDay(day):day)+'*:
-'+tasks.map(t=>'  • '+t.text+(t.loc?' ('+t.loc+')':'')+(t.workers?' — '+t.workers+(zh?' 工人':' פועלים'):'')+(t.pct>0&&t.pct<100?' ['+t.pct+'%]':'')).join('
+      dayLines.push('*'+(zh?zhDay(day):day)+'*:\n'+tasks.map(t=>'  • '+t.text+(t.loc?' ('+t.loc+')':'')+(t.workers?' — '+t.workers+(zh?' 工人':' פועלים'):'')+(t.pct>0&&t.pct<100?' ['+t.pct+'%]':'')).join('
 '));
     });
     if(dayLines.length){lines.push('🔧 *'+(zh?zhTrade(trName):trName)+'*');lines.push(...dayLines);lines.push('');hasContent=true;}
