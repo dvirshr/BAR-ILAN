@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>תוכנית עבודה v16 — YBNIR</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --bg:#F5F4F0;--sf:#FFFFFF;--s2:#EDECEA;--s3:#E0DFDB;
@@ -17,7 +18,6 @@
   --brand:#1A1A1A;--brand-gold:#C8963C;
   --r:8px;--rl:12px;--fn:'Heebo',sans-serif;
 }
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap');
 body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px}
 .app-hdr{background:var(--brand);border-bottom:2px solid var(--brand-gold);padding:8px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .logo{font-size:15px;font-weight:700;color:#fff;display:flex;align-items:center;gap:10px}.logo img{height:34px;width:auto}.logo span{color:var(--brand-gold)}
@@ -257,6 +257,11 @@ body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh
   .itabs,.hdr-acts,.bld-bar button,.day-week-sel{display:none!important}
 }
 
+.contr-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:12px;margin-bottom:8px}
+.ctag{font-size:10px;padding:2px 8px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;border:1px solid var(--bd);background:var(--s2);color:var(--tx3);transition:all .15s}
+.ctag.on{background:var(--bl-bg);color:var(--bl);border-color:var(--bl-b)}
+.wa-btn{background:#25D366;color:white;border:none;border-radius:var(--r);padding:6px 14px;font-size:11px;cursor:pointer;font-family:var(--fn);font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.wa-btn:hover{opacity:.85}
 </style>
 </head>
 <body>
@@ -1435,11 +1440,6 @@ function zhDay(d){return ZH_DAYS[d]||d;}
 function zhTrade(t){return ZH_TRADES[t]||t;}
 
 /* ── CONTRACTORS ── */
-.contr-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:12px;margin-bottom:8px}
-.ctag{font-size:10px;padding:2px 8px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;border:1px solid var(--bd);background:var(--s2);color:var(--tx3);transition:all .15s}
-.ctag.on{background:var(--bl-bg);color:var(--bl);border-color:var(--bl-b)}
-.wa-btn{background:#25D366;color:white;border:none;border-radius:var(--r);padding:6px 14px;font-size:11px;cursor:pointer;font-family:var(--fn);font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:5px}
-.wa-btn:hover{opacity:.85}
 function renderContractors(){
   const b=getBld();if(!b.contractors)b.contractors=[];
   const trades=allTrades(b);
