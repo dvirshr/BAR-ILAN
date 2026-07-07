@@ -1241,7 +1241,7 @@ function exportReport(type){
 }
 
 /* ── CALENDAR ── */
-let refSunday=null;
+refSunday =null;
 function getSunday(d){const dt=d?new Date(d):new Date();dt.setDate(dt.getDate()-dt.getDay());dt.setHours(0,0,0,0);return dt;}
 function fmtD(d){return d.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'2-digit'});}
 function initCalendar(){
