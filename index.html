@@ -396,6 +396,11 @@ function renderBldTabs(){
   document.getElementById('sum-tab-btn').className='sum-tab'+(showingSummary?' active':'');
 }
 function showSummary(){showingSummary=true;selBld=null;renderAll();}
+
+function updHdrProjName(){
+  const el=document.getElementById('hdr-proj-name');
+  if(el)el.textContent=document.getElementById('proj-name').value||'';
+}
 function renderAll(){renderBldTabs();updHdrProjName();if(showingSummary){document.getElementById('bld-content').style.display='none';document.getElementById('summary-view').style.display='block';renderSummary();}else{document.getElementById('bld-content').style.display='block';document.getElementById('summary-view').style.display='none';renderBuilding();}}
 
 function renderBuilding(){
