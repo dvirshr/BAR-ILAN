@@ -1579,6 +1579,11 @@ let autoSaveTimer=null;
 function triggerAutoSave(){clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(()=>{if(typeof saveAll==='function')saveAll();},1200);}
 
 
+function storageKey(){
+  const nm=(document.getElementById('proj-name').value||'default').trim().replace(/[^a-zA-Z0-9\u0590-\u05FF]/g,'_').slice(0,40);
+  return'cplan-v16-'+nm;
+}
+
 function saveAll(){
   try{
     const data={buildings,projName:document.getElementById('proj-name').value};
