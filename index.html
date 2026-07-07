@@ -3,29 +3,30 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>תוכנית עבודה v15</title>
+<title>תוכנית עבודה v16 — YBNIR</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#F7F6F2;--sf:#FFF;--s2:#F1EFE8;--s3:#E8E6DE;
-  --bd:#D3D1C7;--bd2:#B4B2A9;
-  --tx:#2C2C2A;--tx2:#5F5E5A;--tx3:#888780;
-  --bl:#185FA5;--bl-bg:#E6F1FB;--bl-b:#378ADD;
+  --bg:#F5F4F0;--sf:#FFFFFF;--s2:#EDECEA;--s3:#E0DFDB;
+  --bd:#CCCBC6;--bd2:#A8A7A2;
+  --tx:#1A1A1A;--tx2:#3A3A3A;--tx3:#787672;
+  --bl:#C8963C;--bl-bg:#FBF3E4;--bl-b:#D4A84B;
   --gn:#3B6D11;--gn-bg:#EAF3DE;--gn-b:#639922;
   --am:#854F0B;--am-bg:#FAEEDA;--am-b:#FAC775;
   --rd:#993C1D;--rd-bg:#FAECE7;--rd-b:#E24B4A;
+  --brand:#1A1A1A;--brand-gold:#C8963C;
   --r:8px;--rl:12px;--fn:'Heebo',sans-serif;
 }
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&display=swap');
-body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh;font-size:13px}
-.app-hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:10px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(0,0,0,.06)}
-.logo{font-size:15px;font-weight:600}.logo span{color:var(--bl)}
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap');
+body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh;font-size:14px}
+.app-hdr{background:var(--brand);border-bottom:2px solid var(--brand-gold);padding:8px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.logo{font-size:15px;font-weight:700;color:#fff;display:flex;align-items:center;gap:10px}.logo img{height:34px;width:auto}.logo span{color:var(--brand-gold)}
 .proj-inp{font-size:14px;font-weight:500;background:transparent;border:none;border-bottom:1.5px solid var(--bd2);outline:none;padding:2px 4px;font-family:var(--fn);min-width:180px;color:var(--tx)}
 .proj-inp:focus{border-bottom-color:var(--bl)}
 .hdr-acts{margin-right:auto;display:flex;gap:6px;flex-wrap:wrap}
 .btn{font-size:11px;padding:5px 11px;border:1px solid var(--bd2);border-radius:var(--r);background:none;cursor:pointer;color:var(--tx);font-family:var(--fn);transition:background .15s;white-space:nowrap}
 .btn:hover{background:var(--s2)}
-.btn-blue{background:var(--bl-bg);border-color:var(--bl-b);color:var(--bl);font-weight:500}
+.btn-blue{background:var(--brand);border-color:var(--brand-gold);color:var(--brand-gold);font-weight:600}
 .btn-green{background:var(--gn-bg);border-color:var(--gn-b);color:var(--gn);font-weight:500}
 .btn-sm{font-size:10px;padding:3px 8px}
 .btn-amber{background:var(--am-bg);border-color:var(--am-b);color:var(--am);font-weight:500}
@@ -255,32 +256,22 @@ body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh
   .cal-table th,.cal-table td.trade-name-cell{position:static}
   .itabs,.hdr-acts,.bld-bar button,.day-week-sel{display:none!important}
 }
-/* ── CONTRACTORS ── */
-.contr-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:12px;margin-bottom:8px}
-.contr-hd{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.contr-nm{font-size:13px;font-weight:600;color:var(--tx);flex:1}
-.contr-ph{font-size:11px;color:var(--tx3)}
-.contr-trades-wrap{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
-.ctag{font-size:10px;padding:2px 8px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;border:1px solid var(--bd);background:var(--s2);color:var(--tx3);transition:all .15s}
-.ctag.on{background:var(--bl-bg);color:var(--bl);border-color:var(--bl-b)}
-.contr-del{font-size:11px;color:var(--tx3);cursor:pointer;padding:2px 5px;border-radius:4px}
-.contr-del:hover{background:var(--rd-bg);color:var(--rd)}
-.wa-btn{background:#25D366;color:white;border:none;border-radius:var(--r);padding:6px 14px;font-size:11px;cursor:pointer;font-family:var(--fn);font-weight:500;display:inline-flex;align-items:center;gap:5px}
-.wa-btn:hover{opacity:.85}
+
 </style>
 </head>
 <body>
 <div class="app-hdr">
-  <div class="logo">🏗 <span>תוכנית</span> עבודה <span style="font-size:10px;color:var(--tx3);font-weight:400">v15</span></div>
+  <div class="logo"><img src="data:image/png;base64,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" alt="YBNIR"/><span>תוכנית</span> עבודה <span style="font-size:10px;color:#aaa;font-weight:400">v16</span></div>
+  <span id="sync-status" style="font-size:11px;color:#aaa;white-space:nowrap;padding:3px 8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:var(--r)">☁</span>
   <input class="proj-inp" id="proj-name" placeholder="שם הפרויקט"/>
-  <span id="sync-status" style="font-size:11px;color:var(--tx3);white-space:nowrap;padding:4px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r)">☁</span>
+  <div id="week-disp" style="font-size:11px;color:var(--tx2);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:var(--r);padding:4px 10px;cursor:pointer;white-space:nowrap;color:#ddd" onclick="openCalModal()"></div>
   <div id="week-disp" style="font-size:11px;color:var(--tx2);background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:4px 10px;cursor:pointer;white-space:nowrap" onclick="openCalModal()" title="לחץ לשינוי תאריך"></div>
   <div class="hdr-acts">
-    <button class="btn" onclick="openCloudProjectsModal()" title="פרויקטים בענן">☁ פרויקטים</button>
+    <button class="btn" onclick="openCloudProjectsModal()" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">☁ פרויקטים</button>
     <button class="btn btn-green" onclick="openExportModal()">⬇ ייצוא</button>
-    <button class="btn btn-amber" onclick="advanceWeek()" title="הזז שבוע קדימה">⏭ שבוע הבא</button>
-    <button class="btn" onclick="window.print()">🖨 הדפסה</button>
-    <button class="btn btn-blue" onclick="saveAll()" title="שמירה אוטומטית פעילה — לחץ לשמירה מיידית">💾 שמור עכשיו</button>
+    <button class="btn btn-amber" onclick="advanceWeek()">⏭ שבוע הבא</button>
+    <button class="btn" onclick="window.print()" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">🖨 הדפסה</button>
+    <button class="btn" onclick="saveAll()" style="background:var(--brand-gold);border-color:var(--brand-gold);color:#fff;font-weight:600">💾 שמור</button>
   </div>
 </div>
 <div class="body">
@@ -376,8 +367,7 @@ function mkDailySt(){const d={};WK_CFG.forEach(w=>{d[w.id]={};DAYS.forEach((_,i)
 function mkBuilding(name,id){
   const b={id,name,pm:'',mp:'',phase:'שלד ויסודות',addr:'',sup:'',
     comps:mkComps(),activeTrades:['שלד','פיגומים','חשמל','אינסטלציה','טיח'],
-    customTrades:[],contractors:[],
-    wkDates:mkWkDates(),wkNotes:{past:'',current:'',next:'',general:''},
+    customTrades:[],wkDates:mkWkDates(),wkNotes:{past:'',current:'',next:'',general:''},
     wkRisks:[{level:'גבוה',text:'',status:'פתוח'}],daily:mkDailySt(),
     activeInnerTab:'setup',activeDailyWeek:'current',activeDay:0};
   syncFloors(b);return b;
@@ -395,20 +385,6 @@ function allTrades(b){return[...(b.activeTrades||[]),...(b.customTrades||[])];}
 function deepCopy(o){return JSON.parse(JSON.stringify(o));}
 
 function addBuilding(){const nm=prompt('שם המבנה:')||'מבנה חדש';const id='b'+nextId++;buildings.push(mkBuilding(nm,id));selBld=id;showingSummary=false;renderAll();}
-function duplicateBuilding(){
-  const src=getBld();if(!src){alert('בחר מבנה לשכפול');return;}
-  const nm=prompt('שם המבנה החדש:',src.name+' (עותק)');if(!nm)return;
-  const id='b'+nextId++;
-  // Deep copy then give new id/name, reset daily data (keep structure but clear tasks)
-  const copy=JSON.parse(JSON.stringify(src));
-  copy.id=id;copy.name=nm;copy.pm='';copy.mp='';
-  // Reset daily tasks but keep structure
-  copy.daily=mkDailySt();
-  copy.wkNotes={past:'',current:'',next:'',general:''};
-  copy.wkRisks=[{level:'גבוה',text:'',status:'פתוח'}];
-  copy.activeInnerTab='setup';copy.activeDay=0;copy.activeDailyWeek='current';
-  buildings.push(copy);selBld=id;showingSummary=false;renderAll();
-}
 function delBuilding(id){if(buildings.length<=1){alert('לא ניתן למחוק מבנה אחרון');return;}if(!confirm('למחוק?'))return;buildings=buildings.filter(b=>b.id!==id);if(selBld===id)selBld=buildings[0].id;renderAll();}
 function renderBldTabs(){
   document.getElementById('bld-tabs').innerHTML=buildings.map(b=>`<span class="bld-tab ${b.id===selBld&&!showingSummary?'active':''}" onclick="selBld='${b.id}';showingSummary=false;renderAll()">${esc(b.name)}${buildings.length>1?`<span class="bld-del" onclick="event.stopPropagation();delBuilding('${b.id}')">✕</span>`:''}</span>`).join('');
@@ -420,6 +396,18 @@ function renderAll(){renderBldTabs();if(showingSummary){document.getElementById(
 function renderBuilding(){
   const b=getBld();if(!b)return;syncFloors(b);
   document.getElementById('bld-content').innerHTML=`
+    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rl);padding:8px 12px;margin-bottom:8px">
+      <div style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+        <span>פרטי פרויקט — משותף לכל המבנים</span>
+        <button class="btn btn-sm" onclick="copyProjFieldsToAll()">⧉ העתק לכל המבנים</button>
+      </div>
+      <div class="meta-row">
+        <div class="mf"><span class="ml">מנהל עבודה</span><input class="mi" value="${esc(b.pm||'')}" onchange="setProjField('pm',this.value)"/></div>
+        <div class="mf"><span class="ml">מנהל פרויקט</span><input class="mi" value="${esc(b.mp||'')}" onchange="setProjField('mp',this.value)"/></div>
+        <div class="mf"><span class="ml">כתובת</span><input class="mi" value="${esc(b.addr||'')}" onchange="setProjField('addr',this.value)" placeholder="רחוב, עיר"/></div>
+        <div class="mf"><span class="ml">מפקח</span><input class="mi" value="${esc(b.sup||'')}" onchange="setProjField('sup',this.value)"/></div>
+      </div>
+    </div>
     <div class="meta-row">
       <div class="mf"><span class="ml">שם מבנה</span><input class="mi" value="${esc(b.name)}" onchange="getBld().name=this.value;renderBldTabs()"/></div>
       <div class="mf"><span class="ml">מנהל עבודה</span><input class="mi" value="${esc(b.pm||'')}" onchange="getBld().pm=this.value"/></div>
@@ -781,8 +769,6 @@ function setPerFloorPct(ci,fi,t,v){const b=getBld();if(!b.comps[ci].floors[fi].t
 function setPfloorPctIdx(ci,fi,ti,v){const b=getBld();const t=allTrades(b)[ti];if(!t)return;if(!b.comps[ci].floors[fi].tradePcts)b.comps[ci].floors[fi].tradePcts={};b.comps[ci].floors[fi].tradePcts[t]=v;}
 function setSpPctIdx(ci,fi,si,prefix,ti,v){const b=getBld();const t=allTrades(b)[ti];if(!t)return;const sp=getSpRef(b,ci,fi,si,prefix);if(sp){if(!sp.tradePcts)sp.tradePcts={};sp.tradePcts[t]=v;}}
 function setRoomPctIdx(ci,fi,ui,ri,ti,v){const b=getBld();const t=allTrades(b)[ti];if(!t)return;if(!b.comps[ci].floors[fi].units[ui].rooms[ri].tradePcts)b.comps[ci].floors[fi].units[ui].rooms[ri].tradePcts={};b.comps[ci].floors[fi].units[ui].rooms[ri].tradePcts[t]=v;}
-function setRoomPct(ci,fi,ui,ri,t,v){const b=getBld();if(!b.comps[ci].floors[fi].units[ui].rooms[ri].tradePcts)b.comps[ci].floors[fi].units[ui].rooms[ri].tradePcts={};b.comps[ci].floors[fi].units[ui].rooms[ri].tradePcts[t]=v;}
-
 function togCompOpen(ci){
   const b=getBld();b.comps[ci].open=!b.comps[ci].open;
   // Guard: ensure we're on floors tab of the right building
@@ -945,100 +931,6 @@ function openLoc(el,wid,ti,xi){
 function closeLoc(){document.getElementById('loc-dd').style.display='none';}
 function pickLoc(wid,ti,xi,v){const b=getBld();if(b.daily[wid][b.activeDay].trades[ti]&&b.daily[wid][b.activeDay].trades[ti][xi])b.daily[wid][b.activeDay].trades[ti][xi].loc=v;closeLoc();renderDayPanel();}
 
-/* ── CONTRACTORS ── */
-function renderContractors(){
-  const b=getBld();if(!b.contractors)b.contractors=[];
-  const trades=allTrades(b);
-  const el=inner();if(!el)return;
-  const cards=b.contractors.map((c,ci)=>`
-    <div class="contr-card">
-      <div class="contr-hd">
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-            <input class="cfg-inp" style="font-size:13px;font-weight:600;flex:1" value="${esc(c.name)}" placeholder="שם קבלן" onchange="getBld().contractors[${ci}].name=this.value"/>
-            <span class="contr-del" onclick="delContractor(${ci})">✕ מחק</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span style="font-size:10px;color:var(--tx3)">📱</span>
-            <input class="cfg-inp" style="width:160px;direction:ltr" value="${esc(c.phone||'')}" placeholder="972501234567" onchange="getBld().contractors[${ci}].phone=this.value.replace(/[^0-9+]/g,'')"/>
-            <span style="font-size:10px;color:var(--tx3)">ללא רווחים / מקפים</span>
-          </div>
-        </div>
-        <button class="wa-btn" onclick="openWhatsAppModal(${ci})">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          שלח WhatsApp
-        </button>
-      </div>
-      <div style="font-size:10px;color:var(--tx3);margin-bottom:5px">מקצועות — לחץ לשיוך:</div>
-      <div class="contr-trades-wrap">
-        ${trades.map((t,ti)=>`<span class="ctag ${(c.trades||[]).includes(t)?'on':''}" onclick="togContrTrade(${ci},${ti})">
-          <span style="width:6px;height:6px;border-radius:50%;background:${tc(t)};display:inline-block;flex-shrink:0"></span>${esc(t)}
-        </span>`).join('')}
-      </div>
-    </div>`).join('');
-  el.innerHTML=`
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:11px;color:var(--tx3)">שייך מקצועות לכל קבלן. לחץ "שלח WhatsApp" לשליחת תוכנית השבוע.</div>
-      <button class="btn btn-blue" onclick="addContractor()">+ הוסף קבלן</button>
-    </div>
-    ${b.contractors.length===0?`<div style="text-align:center;padding:32px;color:var(--tx3);border:2px dashed var(--bd);border-radius:var(--rl)">אין קבלנים — לחץ "+ הוסף קבלן"</div>`:cards}`;
-}
-function addContractor(){const b=getBld();if(!b.contractors)b.contractors=[];b.contractors.push({id:'c'+Date.now(),name:'',phone:'',trades:[]});renderContractors();}
-function delContractor(ci){const b=getBld();if(!confirm('למחוק קבלן?'))return;b.contractors.splice(ci,1);renderContractors();}
-function togContrTrade(ci,ti){
-  const b=getBld();const t=allTrades(b)[ti];if(!t)return;
-  if(!b.contractors[ci].trades)b.contractors[ci].trades=[];
-  const i=b.contractors[ci].trades.indexOf(t);
-  i>=0?b.contractors[ci].trades.splice(i,1):b.contractors[ci].trades.push(t);
-  renderContractors();
-}
-
-function openWhatsAppModal(ci){
-  const b=getBld();const c=b.contractors[ci];
-  if(!c.name.trim()){alert('הזן שם קבלן');return;}
-  if(!c.phone.trim()){alert('הזן מספר טלפון');return;}
-  if(!(c.trades||[]).length){alert('שייך לפחות מקצוע אחד');return;}
-  const wid=b.activeDailyWeek||'current';
-  const trades=allTrades(b);
-  const wkLbl={past:'שבוע שעבר',current:'שבוע הנוכחי',next:'שבוע הבא'};
-  let lines=['📋 תוכנית עבודה — '+wkLbl[wid],'מבנה: '+b.name+(b.addr?' | '+b.addr:'')];
-  if(refSunday){
-    const base=wid==='past'?new Date(refSunday.getTime()-7*86400000):wid==='next'?new Date(refSunday.getTime()+7*86400000):new Date(refSunday);
-    lines.push('תאריכים: '+fmtD(base)+' – '+fmtD(new Date(base.getTime()+6*86400000)));
-  }
-  lines.push('');
-  let hasContent=false;
-  c.trades.forEach(trName=>{
-    const ti=trades.indexOf(trName);if(ti<0)return;
-    const dayLines=[];
-    DAYS.forEach((day,di)=>{
-      const ds=b.daily[wid][di];if(!ds||!ds.trades)return;
-      const tasks=(ds.trades[ti]||[]).filter(t=>t&&t.text&&t.text.trim());
-      if(!tasks.length)return;
-      dayLines.push('*'+day+'*:\n'+tasks.map(t=>'  • '+t.text+(t.loc?' ('+t.loc+')':'')+(t.workers?' — '+t.workers+' פועלים':'')+(t.pct>0&&t.pct<100?' ['+t.pct+'%]':'')).join('\n'));
-    });
-    if(dayLines.length){lines.push('🔧 *'+trName+'*');lines.push(...dayLines);lines.push('');hasContent=true;}
-  });
-  if(!hasContent)lines.push('(אין משימות מוגדרות השבוע)');
-  lines.push('─────────────────','מנהל עבודה: '+(b.pm||'—'));
-  const msg=lines.join('\n');
-  const phone=c.phone.replace(/[^0-9]/g,'');
-  const url='https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
-  const svgWa=`<svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
-  document.getElementById('modal-root').innerHTML=`<div class="modal-overlay" onclick="if(this===event.target)closeModal()"><div class="modal" style="max-width:520px">
-    <div class="modal-hd">📱 שליחה ל${esc(c.name)}</div>
-    <div style="font-size:11px;color:var(--tx3);margin-bottom:8px">תצוגה מקדימה — שבוע: ${wkLbl[wid]}</div>
-    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:10px;font-size:11px;direction:rtl;white-space:pre-wrap;max-height:260px;overflow-y:auto;line-height:1.6;font-family:var(--fn)">${esc(msg)}</div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <a href="${url}" target="_blank" onclick="closeModal()" style="flex:1;text-decoration:none">
-        <button class="wa-btn" style="width:100%;justify-content:center;font-size:12px;padding:9px">${svgWa} פתח WhatsApp ושלח</button>
-      </a>
-      <button class="btn" onclick="closeModal()" style="padding:9px 16px">ביטול</button>
-    </div>
-    <div style="font-size:10px;color:var(--tx3);margin-top:8px;text-align:center">WhatsApp ייפתח עם ההודעה מוכנה — לחץ "שלח" ב-WhatsApp</div>
-  </div></div>`;
-}
-
 /* ── CALENDAR VIEW ── */
 function renderCalendar(){
   const b=getBld();
@@ -1183,9 +1075,6 @@ function renderDayPanel(){
   const b=getBld();
   const ds=b.daily[b.activeDailyWeek][b.activeDay];
   if(!ds.trades)ds.trades={};if(!ds.tradeCrew)ds.tradeCrew={};if(!ds.tradeOpen)ds.tradeOpen={};
-  // Offer to carry open tasks from previous day (only if current day is empty)
-  const hasTasks=Object.values(ds.trades).some(arr=>arr.some(t=>t&&t.text));
-  if(!hasTasks&&b.activeDay>0)checkCarryTasks(b.activeDailyWeek,b.activeDay);
   const trades=allTrades(b);
   const p=document.getElementById('dp-'+b.id);if(!p)return;
   let tot=0;trades.forEach((tr,ti)=>{
@@ -1351,7 +1240,7 @@ let refSunday=null;
 function getSunday(d){const dt=d?new Date(d):new Date();dt.setDate(dt.getDate()-dt.getDay());dt.setHours(0,0,0,0);return dt;}
 function fmtD(d){return d.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'2-digit'});}
 function initCalendar(){
-  const s=localStorage.getItem('refSun-v15');
+  const s=localStorage.getItem('refSun-v16');
   refSunday=s?new Date(s):getSunday();
   updWeekDisp();
 }
@@ -1379,7 +1268,7 @@ function openCalModal(){
 function setCalDate(){
   const v=document.getElementById('cal-inp').value;if(!v)return;
   const d=new Date(v);if(d.getDay()!==0){alert('יש לבחור יום ראשון');return;}
-  refSunday=d;localStorage.setItem('refSun-v15',d.toISOString());
+  refSunday=d;localStorage.setItem('refSun-v16',d.toISOString());
   updWeekDisp();closeModal();
 }
 function mkDailyWeek(){const d={};DAYS.forEach((_,i)=>{d[i]={tradeCrew:{},notes:'',trades:{},tradeOpen:{}};});return d;}
@@ -1394,15 +1283,14 @@ function advanceWeek(){
     if(!b.wkDates)b.wkDates={};
     b.wkDates.past=b.wkDates.current||{dates:''};b.wkDates.current=b.wkDates.next||{dates:''};b.wkDates.next={dates:''};
   });
-  if(refSunday){refSunday=new Date(refSunday);refSunday.setDate(refSunday.getDate()+7);localStorage.setItem('refSun-v15',refSunday.toISOString());}
+  if(refSunday){refSunday=new Date(refSunday);refSunday.setDate(refSunday.getDate()+7);localStorage.setItem('refSun-v16',refSunday.toISOString());}
   updWeekDisp();saveAll();renderAll();
 }
 
 /* ── JSON IMPORT / EXPORT ── */
 function exportJSON(){
   const pn=document.getElementById('proj-name').value||'פרויקט';
-  const arch=[];try{const a=localStorage.getItem('arch-v15-'+pn.trim().replace(/[^a-zA-Z0-9\u0590-\u05FF]/g,'_').slice(0,40));if(a)arch.push(...JSON.parse(a));}catch(e){}
-  const data={buildings,projName:pn,refSunday:refSunday?refSunday.toISOString():null,exportDate:new Date().toISOString(),archive:arch};
+  const data={buildings,projName:pn,refSunday:refSunday?refSunday.toISOString():null,exportDate:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;
@@ -1421,11 +1309,7 @@ function importJSON(){
         buildings=data.buildings;
         nextId=buildings.reduce((m,b)=>Math.max(m,+(b.id||'b0').replace(/\D/g,'')+1),2);
         document.getElementById('proj-name').value=data.projName||'';
-        if(data.refSunday){refSunday=new Date(data.refSunday);localStorage.setItem('refSun-v15',refSunday.toISOString());}
-        if(data.archive&&data.archive.length){
-          const pn=(data.projName||'פרויקט').trim().replace(/[^a-zA-Z0-9\u0590-\u05FF]/g,'_').slice(0,40);
-          localStorage.setItem('arch-v15-'+pn,JSON.stringify(data.archive));
-        }
+        if(data.refSunday){refSunday=new Date(data.refSunday);localStorage.setItem('refSun-v16',refSunday.toISOString());}
         saveAll();updWeekDisp();renderAll();closeModal();
         alert('יובא בהצלחה ✓');
       }catch(err){alert('שגיאה: '+err.message);}
@@ -1460,317 +1344,275 @@ function addCustomPhase(bid){
 const SB_URL='https://kqxwyiaqxnolqffqkgxj.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxeHd5aWFxeG5vbHFmZnFrZ3hqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjM1NzQsImV4cCI6MjA5ODI5OTU3NH0.v8uROA7etGGHYwaFG8GForixGZK2pA5-8Q4pN9NGsWc';
 const SB_HDR={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'resolution=merge-duplicates'};
-
-let syncStatus='idle'; // idle | saving | saved | error
-let syncTimeout=null;
-let realtimeChannel=null;
-
+let syncTimeout=null,realtimeChannel=null;
 function setSyncStatus(s,msg){
-  syncStatus=s;
-  const el=document.getElementById('sync-status');
-  if(!el)return;
-  const icons={idle:'☁',saving:'⏳',saved:'✓ ענן',error:'⚠ שגיאה'};
-  const colors={idle:'var(--tx3)',saving:'var(--am)',saved:'var(--gn)',error:'var(--rd)'};
-  el.textContent=(icons[s]||'')+(msg?' '+msg:'');
-  el.style.color=colors[s]||'var(--tx3)';
+  const el=document.getElementById('sync-status');if(!el)return;
+  const icons={idle:'☁',saving:'⏳',saved:'✓',error:'⚠'};
+  const colors={idle:'#aaa',saving:'#FAC775',saved:'#97C459',error:'#E24B4A'};
+  el.textContent=(icons[s]||'')+(msg?' '+msg:'');el.style.color=colors[s]||'#aaa';
 }
-
 async function saveToCloud(){
-  const projName=document.getElementById('proj-name').value||'ללא שם';
-  if(!projName.trim())return;
+  const pn=document.getElementById('proj-name').value||'';if(!pn.trim())return;
   setSyncStatus('saving');
   try{
-    const payload={id:projName.trim(),name:projName.trim(),data:{buildings,projName,refSunday:refSunday?refSunday.toISOString():null},updated_at:new Date().toISOString()};
+    const payload={id:pn.trim(),name:pn.trim(),data:{buildings,projName:pn,refSunday:refSunday?refSunday.toISOString():null},updated_at:new Date().toISOString()};
     const res=await fetch(SB_URL+'/rest/v1/projects',{method:'POST',headers:SB_HDR,body:JSON.stringify(payload)});
     if(!res.ok)throw new Error('HTTP '+res.status);
-    setSyncStatus('saved');
-    setTimeout(()=>setSyncStatus('idle'),3000);
-  }catch(e){
-    setSyncStatus('error',e.message);
-    console.error('Cloud save error:',e);
-  }
+    setSyncStatus('saved');setTimeout(()=>setSyncStatus('idle'),3000);
+    window._lastSyncTs=Date.now();
+  }catch(e){setSyncStatus('error');console.error('Cloud save:',e);}
 }
-
-async function loadFromCloud(projName){
-  if(!projName||!projName.trim())return false;
+async function loadFromCloud(pn){
+  if(!pn||!pn.trim())return false;
   try{
-    const res=await fetch(SB_URL+'/rest/v1/projects?id=eq.'+encodeURIComponent(projName.trim())+'&select=data',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+    const res=await fetch(SB_URL+'/rest/v1/projects?id=eq.'+encodeURIComponent(pn.trim())+'&select=data',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
     if(!res.ok)return false;
     const rows=await res.json();
     if(!rows||!rows.length||!rows[0].data)return false;
     const d=rows[0].data;
     if(d.buildings&&d.buildings.length){
-      // Preserve current UI/view state before replacing data — prevents the
-      // background sync from "kicking" the user back to setup/other tabs.
-      const prevSelBld=selBld;
-      const prevShowingSummary=showingSummary;
-      const viewState={}; // per-building: activeInnerTab, activeDailyWeek, activeDay, calWeek
-      buildings.forEach(b=>{
-        viewState[b.id]={activeInnerTab:b.activeInnerTab,activeDailyWeek:b.activeDailyWeek,activeDay:b.activeDay,calWeek:b.calWeek};
-      });
-
+      // Preserve view state
+      const prevSel=selBld,prevSum=showingSummary,vs={};
+      buildings.forEach(b=>{vs[b.id]={tab:b.activeInnerTab,week:b.activeDailyWeek,day:b.activeDay,cal:b.calWeek};});
       buildings=d.buildings;
-      buildings.forEach(b=>{
-        const v=viewState[b.id];
-        if(v){ // restore view state for buildings that already existed locally
-          b.activeInnerTab=v.activeInnerTab||b.activeInnerTab;
-          b.activeDailyWeek=v.activeDailyWeek||b.activeDailyWeek;
-          if(v.activeDay!=null)b.activeDay=v.activeDay;
-          if(v.calWeek)b.calWeek=v.calWeek;
-        }
-      });
-      // Keep selected building / summary view if it still exists
-      if(prevSelBld&&buildings.find(b=>b.id===prevSelBld))selBld=prevSelBld;
-      showingSummary=prevShowingSummary;
-
+      buildings.forEach(b=>{const v=vs[b.id];if(v){b.activeInnerTab=v.tab||b.activeInnerTab;b.activeDailyWeek=v.week||b.activeDailyWeek;if(v.day!=null)b.activeDay=v.day;if(v.cal)b.calWeek=v.cal;}});
+      if(prevSel&&buildings.find(b=>b.id===prevSel))selBld=prevSel;
+      showingSummary=prevSum;
       nextId=buildings.reduce((m,b)=>Math.max(m,+(b.id||'b0').replace(/\D/g,'')+1),nextId);
-      document.getElementById('proj-name').value=d.projName||projName;
-      if(d.refSunday){refSunday=new Date(d.refSunday);localStorage.setItem('refSun-v15',refSunday.toISOString());}
-      saveAll(); // also save locally
+      document.getElementById('proj-name').value=d.projName||pn;
+      if(d.refSunday){refSunday=new Date(d.refSunday);localStorage.setItem('refSun-v16',refSunday.toISOString());}
       return true;
     }
-  }catch(e){console.error('Cloud load error:',e);}
+  }catch(e){console.error('Cloud load:',e);}
   return false;
 }
-
 async function listCloudProjects(){
-  try{
-    const res=await fetch(SB_URL+'/rest/v1/projects?select=id,name,updated_at&order=updated_at.desc',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
-    if(!res.ok)return[];
-    return await res.json();
-  }catch(e){return[];}
+  try{const res=await fetch(SB_URL+'/rest/v1/projects?select=id,name,updated_at&order=updated_at.desc',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});return res.ok?await res.json():[];}catch(e){return[];}
 }
-
-function scheduleCloudSave(){
-  clearTimeout(syncTimeout);
-  setSyncStatus('saving');
-  syncTimeout=setTimeout(()=>saveToCloud(),1500); // debounce 1.5s
-}
-
-function startRealtime(projName){
-  if(realtimeChannel)return; // already connected
-  // Poll every 15 seconds for changes from other users
+function scheduleCloudSave(){clearTimeout(syncTimeout);syncTimeout=setTimeout(()=>saveToCloud(),1500);}
+function startRealtime(pn){
+  if(realtimeChannel)return;
   realtimeChannel=setInterval(async()=>{
+    const active=document.activeElement;
+    if(active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT'))return;
     try{
-      // Skip refresh while user is actively typing — avoids interrupting input
-      const active=document.activeElement;
-      if(active&&(active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT'))return;
-      const res=await fetch(SB_URL+'/rest/v1/projects?id=eq.'+encodeURIComponent(projName)+'&select=updated_at',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+      const res=await fetch(SB_URL+'/rest/v1/projects?id=eq.'+encodeURIComponent(pn)+'&select=updated_at',{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
       if(!res.ok)return;
-      const rows=await res.json();
-      if(!rows||!rows.length)return;
-      const remoteTs=new Date(rows[0].updated_at).getTime();
-      if(!window._lastSyncTs)window._lastSyncTs=remoteTs;
-      if(remoteTs>window._lastSyncTs+2000){ // 2s buffer to ignore own saves
-        window._lastSyncTs=remoteTs;
-        const loaded=await loadFromCloud(projName);
-        if(loaded){renderAll();setSyncStatus('saved','עודכן');setTimeout(()=>setSyncStatus('idle'),3000);}
-      }
+      const rows=await res.json();if(!rows||!rows.length)return;
+      const ts=new Date(rows[0].updated_at).getTime();
+      if(!window._lastSyncTs)window._lastSyncTs=ts;
+      if(ts>window._lastSyncTs+2000){window._lastSyncTs=ts;const ok=await loadFromCloud(pn);if(ok){renderAll();setSyncStatus('saved','עודכן');setTimeout(()=>setSyncStatus('idle'),3000);}}
     }catch(e){}
   },15000);
 }
-function stopRealtime(){if(realtimeChannel){clearInterval(realtimeChannel);realtimeChannel=null;}}
-
 async function openCloudProjectsModal(){
   const projects=await listCloudProjects();
   document.getElementById('modal-root').innerHTML=`<div class="modal-overlay" onclick="if(this===event.target)closeModal()"><div class="modal" style="max-width:460px">
     <div class="modal-hd">☁ פרויקטים בענן</div>
-    ${projects.length===0?`<div style="text-align:center;padding:20px;color:var(--tx3)">אין פרויקטים שמורים בענן</div>`:''}
+    ${!projects.length?'<div style="text-align:center;padding:20px;color:var(--tx3)">אין פרויקטים</div>':''}
     ${projects.map(p=>`<div class="modal-opt" onclick="loadCloudProject('${p.id.replace(/'/g,"\\'")}')">
       <span class="modal-opt-icon">📁</span>
-      <div>
-        <div class="modal-opt-title">${esc(p.name)}</div>
-        <div class="modal-opt-desc">עודכן: ${new Date(p.updated_at).toLocaleString('he-IL')}</div>
-      </div>
+      <div><div class="modal-opt-title">${esc(p.name)}</div><div class="modal-opt-desc">עודכן: ${new Date(p.updated_at).toLocaleString('he-IL')}</div></div>
     </div>`).join('')}
     <button class="btn" onclick="closeModal()" style="width:100%;margin-top:8px">סגור</button>
   </div></div>`;
 }
 async function loadCloudProject(id){
-  closeModal();
-  setSyncStatus('saving','טוען...');
+  closeModal();setSyncStatus('saving','טוען...');
   const ok=await loadFromCloud(id);
   if(ok){startRealtime(id);renderAll();setSyncStatus('saved','נטען');}
-  else{setSyncStatus('error','לא נמצא');}
+  else setSyncStatus('error','לא נמצא');
 }
 
+/* ── PROJECT FIELDS ── */
+function setProjField(field,val){buildings.forEach(b=>b[field]=val);}
+function copyProjFieldsToAll(){const p=buildings[0];if(!p)return;buildings.forEach(b=>{b.pm=p.pm;b.mp=p.mp;b.addr=p.addr;b.sup=p.sup;});alert('הועתק לכל המבנים ✓');}
 
-function storageKey(){
-  const nm=(document.getElementById('proj-name').value||'default').trim().replace(/[^a-zA-Z0-9\u0590-\u05FF]/g,'_').slice(0,40);
-  return'cplan-v15-'+nm;
-}
+/* ── CHINESE ── */
+const ZH_DAYS={'א׳':'周日','ב׳':'周一','ג׳':'周二','ד׳':'周三','ה׳':'周四','ו׳':'周五'};
+const ZH_TRADES={'שלד':'结构','פיגומים':'脚手架','איטום':'防水','טיח':'抹灰','ריצוף וחיפוי':'铺地砖','גבס':'石膏板','צבע':'油漆','חשמל':'电气','אינסטלציה':'水管','אלומיניום':'铝合金','חיפוי חוץ':'外墙','מעליות':'电梯','מתזים':'喷淋','ארגון אתר וכלליות':'现场管理'};
+function zhDay(d){return ZH_DAYS[d]||d;}
+function zhTrade(t){return ZH_TRADES[t]||t;}
 
-/* ── WEEKLY ARCHIVE ── */
-function saveArchive(){
-  const pn=(document.getElementById('proj-name').value||'פרויקט').trim().replace(/[^a-zA-Z0-9\u0590-\u05FF]/g,'_').slice(0,40);
-  const archKey='arch-v15-'+pn;
-  let arch=[];
-  try{const a=localStorage.getItem(archKey);if(a)arch=JSON.parse(a);}catch(e){}
-  arch.unshift({date:new Date().toISOString(),week:refSunday?refSunday.toISOString():null,buildings:JSON.parse(JSON.stringify(buildings))});
-  if(arch.length>12)arch=arch.slice(0,12);
-  try{localStorage.setItem(archKey,JSON.stringify(arch));}catch(e){}
-}
-
-/* ── CARRY OPEN TASKS ── */
-function checkCarryTasks(wid,dayIdx){
-  if(dayIdx===0)return;
-  const b=getBld();
-  const prev=b.daily[wid][dayIdx-1];
-  const curr=b.daily[wid][dayIdx];
-  if(!prev||!prev.trades)return;
+/* ── CONTRACTORS ── */
+.contr-card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:12px;margin-bottom:8px}
+.ctag{font-size:10px;padding:2px 8px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;border:1px solid var(--bd);background:var(--s2);color:var(--tx3);transition:all .15s}
+.ctag.on{background:var(--bl-bg);color:var(--bl);border-color:var(--bl-b)}
+.wa-btn{background:#25D366;color:white;border:none;border-radius:var(--r);padding:6px 14px;font-size:11px;cursor:pointer;font-family:var(--fn);font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.wa-btn:hover{opacity:.85}
+function renderContractors(){
+  const b=getBld();if(!b.contractors)b.contractors=[];
   const trades=allTrades(b);
-  const openTasks=[];
-  trades.forEach((_,ti)=>{
-    (prev.trades[ti]||[]).forEach(t=>{
-      if(t&&t.text&&t.text.trim()&&!t.done&&(t.pct||0)<100){
-        if(!(curr.trades[ti]||[]).find(x=>x.text===t.text))
-          openTasks.push({ti,text:t.text,pct:t.pct||0,loc:t.loc||'',workers:t.workers||0});
-      }
-    });
-  });
-  if(!openTasks.length)return;
-  if(!confirm(`יש ${openTasks.length} משימות פתוחות מיום ${DAYS[dayIdx-1]}.\nלהעביר ליום ${DAYS[dayIdx]}?`))return;
-  openTasks.forEach(({ti,text,pct,loc,workers})=>{
-    if(!curr.trades[ti])curr.trades[ti]=[];
-    curr.trades[ti].push({text,done:false,pct,loc,workers});
-  });
-  renderDayPanel();
+  const el=inner();if(!el)return;
+  const cards=b.contractors.map((c,ci)=>{
+    if(!c.contacts)c.contacts=[{name:c.phone?c.name:'',phone:c.phone||'',lang:'he'},{name:'',phone:'',lang:'he'}];
+    return`<div class="contr-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <input class="cfg-inp" style="font-size:13px;font-weight:600;flex:1" value="${esc(c.name||'')}" placeholder="שם החברה / קבלן" onchange="getBld().contractors[${ci}].name=this.value"/>
+        <button class="btn btn-sm" onclick="printContractorReport(${ci})">🖨 PDF</button>
+        <span class="sp-del" onclick="delContractor(${ci})">✕</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        ${c.contacts.map((ct,cti)=>`<div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:8px">
+          <div style="font-size:10px;color:var(--tx3);margin-bottom:4px;font-weight:600">איש קשר ${cti+1}</div>
+          <input class="cfg-inp" style="width:100%;margin-bottom:4px" value="${esc(ct.name||'')}" placeholder="שם" onchange="getBld().contractors[${ci}].contacts[${cti}].name=this.value"/>
+          <input class="cfg-inp" style="width:100%;margin-bottom:5px;direction:ltr" value="${esc(ct.phone||'')}" placeholder="972501234567" onchange="getBld().contractors[${ci}].contacts[${cti}].phone=this.value.replace(/[^0-9+]/g,'')"/>
+          <div style="display:flex;gap:4px;margin-bottom:6px">
+            <button class="btn btn-sm ${ct.lang==='he'?'btn-blue':''}" style="flex:1;font-size:10px" onclick="setContrLang(${ci},${cti},'he')">🇮🇱 עברית</button>
+            <button class="btn btn-sm ${ct.lang==='zh'?'btn-blue':''}" style="flex:1;font-size:10px" onclick="setContrLang(${ci},${cti},'zh')">🇨🇳 中文</button>
+          </div>
+          ${ct.phone?`<button class="wa-btn" style="width:100%;justify-content:center;font-size:11px;padding:6px" onclick="openWhatsAppModal(${ci},${cti})">📱 שלח WhatsApp</button>`:`<div style="font-size:10px;color:var(--tx3);text-align:center;padding:4px">הזן טלפון לשליחה</div>`}
+        </div>`).join('')}
+      </div>
+      <div style="font-size:10px;color:var(--tx3);margin-bottom:5px">מקצועות — לחץ לשיוך:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${trades.map((t,ti)=>`<span class="ctag ${(c.trades||[]).includes(t)?'on':''}" onclick="togContrTrade(${ci},${ti})">
+          <span style="width:6px;height:6px;border-radius:50%;background:${tc(t)};display:inline-block;flex-shrink:0"></span>${esc(t)}
+        </span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--tx3)">שני אנשי קשר לכל קבלן | שפה לכל איש קשר | שיוך מקצועות</div>
+      <button class="btn btn-blue" onclick="addContractor()">+ הוסף קבלן</button>
+    </div>
+    ${!b.contractors.length?`<div style="text-align:center;padding:32px;color:var(--tx3);border:2px dashed var(--bd);border-radius:var(--rl)">אין קבלנים — לחץ "+ הוסף קבלן"</div>`:cards}`;
 }
+function setContrLang(ci,cti,lang){const b=getBld();if(b.contractors[ci]&&b.contractors[ci].contacts[cti])b.contractors[ci].contacts[cti].lang=lang;renderContractors();}
+function addContractor(){const b=getBld();if(!b.contractors)b.contractors=[];b.contractors.push({id:'c'+Date.now(),name:'',contacts:[{name:'',phone:'',lang:'he'},{name:'',phone:'',lang:'he'}],trades:[]});renderContractors();}
+function delContractor(ci){const b=getBld();if(!confirm('למחוק?'))return;b.contractors.splice(ci,1);renderContractors();}
+function togContrTrade(ci,ti){
+  const b=getBld();const t=allTrades(b)[ti];if(!t)return;
+  if(!b.contractors[ci].trades)b.contractors[ci].trades=[];
+  const i=b.contractors[ci].trades.indexOf(t);
+  i>=0?b.contractors[ci].trades.splice(i,1):b.contractors[ci].trades.push(t);
+  renderContractors();
+}
+function openWhatsAppModal(ci,cti){
+  cti=cti||0;
+  const b=getBld();const c=b.contractors[ci];if(!c)return;
+  if(!c.contacts)c.contacts=[{name:'',phone:'',lang:'he'},{name:'',phone:'',lang:'he'}];
+  const ct=c.contacts[cti];
+  if(!(c.trades||[]).length){alert('שייך לפחות מקצוע אחד');return;}
+  if(!ct.phone){alert('הזן מספר טלפון');return;}
+  const zh=ct.lang==='zh';
+  const wid=b.activeDailyWeek||'current';
+  const trades=allTrades(b);
+  const wkLbl={past:zh?'上周':'שבוע שעבר',current:zh?'本周':'שבוע הנוכחי',next:zh?'下周':'שבוע הבא'};
+  let lines=[];
+  lines.push('📋 '+(zh?'工作计划':'תוכנית עבודה')+' — '+wkLbl[wid]);
+  lines.push((zh?'建筑:':'מבנה:')+' '+b.name+(b.addr?' | '+b.addr:''));
+  if(refSunday){
+    const base=wid==='past'?new Date(refSunday.getTime()-7*86400000):wid==='next'?new Date(refSunday.getTime()+7*86400000):new Date(refSunday);
+    lines.push((zh?'日期:':'תאריכים:')+' '+fmtD(base)+' – '+fmtD(new Date(base.getTime()+6*86400000)));
+  }
+  lines.push('');
+  let hasContent=false;
+  (c.trades||[]).forEach(trName=>{
+    const ti=trades.indexOf(trName);if(ti<0)return;
+    const dayLines=[];
+    DAYS.forEach((day,di)=>{
+      const ds=b.daily[wid][di];if(!ds||!ds.trades)return;
+      const tasks=(ds.trades[ti]||[]).filter(t=>t&&t.text&&t.text.trim());
+      if(!tasks.length)return;
+      dayLines.push('*'+(zh?zhDay(day):day)+'*:
+'+tasks.map(t=>'  • '+t.text+(t.loc?' ('+t.loc+')':'')+(t.workers?' — '+t.workers+(zh?' 工人':' פועלים'):'')+(t.pct>0&&t.pct<100?' ['+t.pct+'%]':'')).join('
+'));
+    });
+    if(dayLines.length){lines.push('🔧 *'+(zh?zhTrade(trName):trName)+'*');lines.push(...dayLines);lines.push('');hasContent=true;}
+  });
+  if(!hasContent)lines.push(zh?'(本周暂无任务)':'(אין משימות מוגדרות השבוע)');
+  lines.push('─────────────────',(zh?'工地主任:':'מנהל עבודה:')+(b.pm||'—'));
+  const msg=lines.join('
+');
+  const phone=ct.phone.replace(/[^0-9]/g,'');
+  const url='https://wa.me/'+phone+'?text='+encodeURIComponent(msg);
+  document.getElementById('modal-root').innerHTML=`<div class="modal-overlay" onclick="if(this===event.target)closeModal()"><div class="modal" style="max-width:520px">
+    <div class="modal-hd">📱 שליחה ל${esc(ct.name||c.name||'')} ${zh?'(中文)':'(עברית)'}</div>
+    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:10px;font-size:11px;white-space:pre-wrap;max-height:260px;overflow-y:auto;line-height:1.6">${esc(msg)}</div>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <a href="${url}" target="_blank" onclick="closeModal()" style="flex:1;text-decoration:none">
+        <button class="wa-btn" style="width:100%;justify-content:center;padding:9px">${zh?'打开WhatsApp':'פתח WhatsApp ושלח'}</button>
+      </a>
+      <button class="btn" onclick="closeModal()" style="padding:9px 16px">${zh?'取消':'ביטול'}</button>
+    </div>
+  </div></div>`;
+}
+function printContractorReport(ci){
+  const b=getBld();const c=b.contractors[ci];if(!c)return;
+  const wid=b.activeDailyWeek||'current';
+  const trades=allTrades(b);
+  const wkLbl={past:'שבוע שעבר',current:'שבוע הנוכחי',next:'שבוע הבא'};
+  let html='<html dir="rtl"><head><meta charset="UTF-8"/><title>דו\"ח קבלן</title>';
+  html+='<style>body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:20px;direction:rtl}';
+  html+='h1{font-size:16px;border-bottom:2px solid #C8963C;padding-bottom:6px}';
+  html+='h2{font-size:13px;color:#C8963C;margin:12px 0 4px}';
+  html+='table{width:100%;border-collapse:collapse;margin-bottom:10px}';
+  html+='th{background:#1A1A1A;color:#C8963C;padding:5px 8px;text-align:right;font-size:11px}';
+  html+='td{padding:4px 8px;border:1px solid #ccc;font-size:11px}';
+  html+='tr:nth-child(even)td{background:#f5f4f0}</style></head><body>';
+  html+='<h1>YBNIR — דו\"ח תוכנית עבודה | '+esc(c.name||'')+'</h1>';
+  html+='<p>מבנה: '+esc(b.name)+(b.addr?' | '+esc(b.addr):'');
+  html+=' | מנהל עבודה: '+esc(b.pm||'—')+' | שבוע: '+wkLbl[wid]+'</p>';
+  (c.trades||[]).forEach(trName=>{
+    const ti=trades.indexOf(trName);if(ti<0)return;
+    const rows=[];
+    DAYS.forEach((day,di)=>{
+      const ds=b.daily[wid][di];if(!ds||!ds.trades)return;
+      (ds.trades[ti]||[]).forEach(t=>{if(t&&t.text&&t.text.trim())rows.push({day,text:t.text,loc:t.loc||'',workers:t.workers||0,pct:t.pct||0});});
+    });
+    if(!rows.length)return;
+    html+='<h2>🔧 '+esc(trName)+'</h2>';
+    html+='<table><tr><th>יום</th><th>משימה</th><th>מיקום</th><th>פועלים</th><th>%</th></tr>';
+    rows.forEach(r=>{html+='<tr><td>'+r.day+'</td><td>'+esc(r.text)+'</td><td>'+esc(r.loc)+'</td><td style="text-align:center">'+(r.workers||'')+'</td><td style="text-align:center">'+(r.pct?r.pct+'%':'')+'</td></tr>';});
+    html+='</table>';
+  });
+  html+='</body></html>';
+  const w=window.open('','_blank');w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);
+}
+
+/* ── CALENDAR & WEEK MGT ── */
+let refSunday=null;
+/* ── AUTO-SAVE ── */
+let autoSaveTimer=null;
+function triggerAutoSave(){clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(()=>{if(typeof saveAll==='function')saveAll();},1200);}
+
 
 function saveAll(){
   try{
-    const data=JSON.stringify({buildings,projName:document.getElementById('proj-name').value});
-    localStorage.setItem(storageKey(),data);
-    localStorage.setItem('cplan-v15-PROJECT',data);
-    document.querySelectorAll('.hdr-acts .btn').forEach(x=>{
-      if(x.textContent.includes('שמור')){const o=x.textContent;x.textContent='✓ נשמר';setTimeout(()=>x.textContent=o,1500);}
-    });
-    // Cloud save (debounced)
+    const data={buildings,projName:document.getElementById('proj-name').value};
+    const json=JSON.stringify(data);
+    localStorage.setItem(storageKey(),json);
+    localStorage.setItem('cplan-v16-PROJECT',json);
     scheduleCloudSave();
   }catch(e){alert('שגיאה — נסה שוב');}
 }
-
-/* advanceWeek with archive */
-function advanceWeek(){
-  if(!confirm('להזיז שבוע קדימה?\nנוכחי→עבר | הבא→נוכחי | שבוע ריק נפתח\n\nהשבוע יישמר בארכיון אוטומטית.'))return;
-  saveArchive();
-  buildings.forEach(b=>{
-    b.daily.past=JSON.parse(JSON.stringify(b.daily.current));
-    b.daily.current=JSON.parse(JSON.stringify(b.daily.next));
-    b.daily.next=mkDailyWeek();
-    if(!b.wkNotes)b.wkNotes={};
-    b.wkNotes.past=b.wkNotes.current||'';b.wkNotes.current=b.wkNotes.next||'';b.wkNotes.next='';
-    if(!b.wkDates)b.wkDates={};
-    b.wkDates.past=b.wkDates.current||{dates:''};b.wkDates.current=b.wkDates.next||{dates:''};b.wkDates.next={dates:''};
-  });
-  if(refSunday){refSunday=new Date(refSunday);refSunday.setDate(refSunday.getDate()+7);localStorage.setItem('refSun-v15',refSunday.toISOString());}
-  updWeekDisp();saveAll();renderAll();
-}
-
-/* Init */
 try{
-  const keys=['cplan-v15-PROJECT','cplan-v13-PROJECT','cplan-v12','cplan-v11','cplan-v10','cplan-v9'];
+  const keys=['cplan-v16-PROJECT','cplan-v11','cplan-v10','cplan-v9'];
   for(const key of keys){
     const d=localStorage.getItem(key);
-    if(d){
-      const p=JSON.parse(d);
-      if(p.buildings&&p.buildings.length){
-        buildings=p.buildings;
-        nextId=buildings.reduce((m,b)=>Math.max(m,+(b.id||'b0').replace(/\D/g,'')+1),nextId);
-        document.getElementById('proj-name').value=p.projName||'';
-        break;
-      }
-    }
+    if(d){const p=JSON.parse(d);if(p.buildings&&p.buildings.length){buildings=p.buildings;nextId=buildings.reduce((m,b)=>Math.max(m,+(b.id||'b0').replace(/\D/g,'')+1),nextId);document.getElementById('proj-name').value=p.projName||'';if(key!=='cplan-v16-PROJECT')localStorage.setItem('cplan-v16-PROJECT',d);break;}}
   }
-  // Now check project-specific key (overrides if exists)
-  const pk=storageKey();
-  if(pk!=='cplan-v15-default'){
-    const pd=localStorage.getItem(pk);
-    if(pd){
-      const p=JSON.parse(pd);
-      if(p.buildings&&p.buildings.length){
-        buildings=p.buildings;
-        nextId=buildings.reduce((m,b)=>Math.max(m,+(b.id||'b0').replace(/\D/g,'')+1),nextId);
-        document.getElementById('proj-name').value=p.projName||'';
-      }
-    }
-  }
-}catch(e){console.warn('Load error:',e);}
-
-document.getElementById('proj-name').addEventListener('blur',()=>{saveAll();renderBldTabs();});
-
-/* ── AUTO-SAVE ── Listen for any input/change anywhere in the app and
-   debounce-save automatically, so the user never has to click "שמור". */
-let autoSaveTimer=null;
-function triggerAutoSave(){
-  clearTimeout(autoSaveTimer);
-  autoSaveTimer=setTimeout(()=>{ if(typeof saveAll==='function') saveAll(); },1200);
-}
-document.addEventListener('input',e=>{
-  if(e.target&&(e.target.id==='proj-name'))return; // handled separately on blur
-  triggerAutoSave();
-});
-document.addEventListener('change',e=>{
-  if(e.target&&(e.target.id==='proj-name'))return;
-  triggerAutoSave();
-});
-// Also catch clicks on checkboxes/buttons that change data (done-toggles, +/- buttons etc.)
-document.addEventListener('click',e=>{
-  const t=e.target.closest('.tcb,.tog,.btn,.rbadge,.fl-arr,.sp-del,.rm-del,.bld-del');
-  if(t)triggerAutoSave();
-});
-
+}catch(e){}
 initCalendar();
-
-/* Init — load local first, then try cloud */
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='proj-name')return;triggerAutoSave();});
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='proj-name')return;triggerAutoSave();});
 (async()=>{
-  // 1. Load from localStorage (fast, immediate)
   try{
-    const keys=['cplan-v15-PROJECT','cplan-v14-PROJECT','cplan-v13-PROJECT','cplan-v12','cplan-v11','cplan-v10','cplan-v9'];
-    for(const key of keys){
-      const d=localStorage.getItem(key);
-      if(d){
-        const p=JSON.parse(d);
-        if(p.buildings&&p.buildings.length){
-          buildings=p.buildings;
-          nextId=buildings.reduce((m,b)=>Math.max(m,+(b.id||'b0').replace(/\D/g,'')+1),nextId);
-          document.getElementById('proj-name').value=p.projName||'';
-          break;
-        }
-      }
-    }
-    const pk=storageKey();
-    if(pk!=='cplan-v15-default'){
-      const pd=localStorage.getItem(pk);
-      if(pd){const p=JSON.parse(pd);if(p.buildings&&p.buildings.length){buildings=p.buildings;nextId=buildings.reduce((m,b)=>Math.max(m,+(b.id||'b0').replace(/\D/g,'')+1),nextId);document.getElementById('proj-name').value=p.projName||'';}}
-    }
-  }catch(e){console.warn('Local load error:',e);}
-
-  renderAll(); // show local data immediately
-
-  // 2. Try to load from cloud (may be newer)
-  const projName=document.getElementById('proj-name').value;
-  if(projName&&projName.trim()){
+    const keys=['cplan-v16-PROJECT','cplan-v15-PROJECT','cplan-v14-PROJECT','cplan-v13-PROJECT','cplan-v12'];
+    for(const key of keys){const d=localStorage.getItem(key);if(d){const p=JSON.parse(d);if(p.buildings&&p.buildings.length){buildings=p.buildings;nextId=buildings.reduce((m,b)=>Math.max(m,+(b.id||'b0').replace(/\D/g,'')+1),nextId);document.getElementById('proj-name').value=p.projName||'';break;}}}
+    const pk=storageKey();if(pk!=='cplan-v16-default'){const pd=localStorage.getItem(pk);if(pd){const p=JSON.parse(pd);if(p.buildings&&p.buildings.length){buildings=p.buildings;nextId=buildings.reduce((m,b)=>Math.max(m,+(b.id||'b0').replace(/\D/g,'')+1),nextId);document.getElementById('proj-name').value=p.projName||'';}}}
+  }catch(e){}
+  renderAll();
+  const pn=document.getElementById('proj-name').value;
+  if(pn&&pn.trim()){
     setSyncStatus('saving','מתחבר...');
-    const loaded=await loadFromCloud(projName);
-    if(loaded){
-      renderAll();
-      setSyncStatus('saved','מסונכרן');
-      setTimeout(()=>setSyncStatus('idle'),3000);
-      startRealtime(projName);
-    } else {
-      setSyncStatus('idle');
-      // No cloud data yet — save current local to cloud
-      if(buildings.length&&buildings[0].name!=='מבנה א׳'||document.getElementById('proj-name').value){
-        saveToCloud();
-        startRealtime(projName);
-      }
-    }
-  } else {
-    renderAll();
+    const ok=await loadFromCloud(pn);
+    if(ok){renderAll();setSyncStatus('saved','מסונכרן');setTimeout(()=>setSyncStatus('idle'),3000);startRealtime(pn);}
+    else{setSyncStatus('idle');saveToCloud();startRealtime(pn);}
   }
 })();
-
 </script>
 </body>
 </html>
