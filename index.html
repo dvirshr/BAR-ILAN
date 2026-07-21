@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>תוכנית עבודה v21 — YBNIR</title>
+<title>תוכנית עבודה v22 — YBNIR</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -479,6 +479,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <div id="week-disp" style="font-size:11px;color:var(--tx2);background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:4px 10px;cursor:pointer;white-space:nowrap" onclick="openCalModal()" title="לחץ לשינוי תאריך"></div>
   <div class="hdr-acts">
     <button class="btn" onclick="openCloudProjectsModal()" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">☁ פרויקטים</button>
+    <button class="btn" id="btn-msp" aria-label="ייבוא לוח זמנים" onclick="openMspImport()" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">📥 לו"ז</button>
     <button class="btn btn-green" aria-label="ייצוא דוחות" onclick="openExportModal()">⬇ ייצוא</button>
     <button class="btn btn-amber" aria-label="עבור לשבוע הבא" onclick="advanceWeek()">⏭ שבוע הבא</button>
     <button class="btn" aria-label="הדפסה" onclick="window.print()" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">🖨 הדפסה</button>
@@ -1646,7 +1647,7 @@ async function saveToCloud(){
   const pn=document.getElementById('proj-name').value||'';if(!pn.trim())return;
   setSyncStatus('saving');
   try{
-    const payload={id:pn.trim(),name:pn.trim(),data:{buildings,projName:pn,refSunday:refSunday?refSunday.toISOString():null},updated_at:new Date().toISOString()};if(isOwner&&currentUser)payload.owner_id=currentUser.id;
+    const payload={id:pn.trim(),name:pn.trim(),data:{buildings,projName:pn,refSunday:refSunday?refSunday.toISOString():null,mspTasks:window.mspTasks||[]},updated_at:new Date().toISOString()};if(isOwner&&currentUser)payload.owner_id=currentUser.id;
     const res=await fetch(SB_URL+'/rest/v1/projects',{method:'POST',headers:sbWriteHdr(),body:JSON.stringify(payload)});
     if(!res.ok)throw new Error('HTTP '+res.status);
     setSyncStatus('saved');setTimeout(()=>setSyncStatus('idle'),3000);
@@ -1666,6 +1667,7 @@ async function loadFromCloud(pn){
       const prevSel=selBld,prevSum=showingSummary,vs={};
       buildings.forEach(b=>{vs[b.id]={tab:b.activeInnerTab,week:b.activeDailyWeek,day:b.activeDay,cal:b.calWeek};});
       buildings=d.buildings;
+      window.mspTasks=d.mspTasks||window.mspTasks||[];
       buildings.forEach(b=>{const v=vs[b.id];if(v){b.activeInnerTab=v.tab||b.activeInnerTab;b.activeDailyWeek=v.week||b.activeDailyWeek;if(v.day!=null)b.activeDay=v.day;if(v.cal)b.calWeek=v.cal;}});
       if(prevSel&&buildings.find(b=>b.id===prevSel))selBld=prevSel;
       showingSummary=prevSum;
@@ -1871,7 +1873,307 @@ function printContractorReport(ci){
     });
     if(!bldHasContent)html+='<p style="color:#888">אין משימות</p>';
   });
-  html+='</body></html>';
+  html+='<script id="msp-module">
+/* ═══════════════════════════════════════════════════════════════
+   YBNIR v22 · ייבוא לוח זמנים מ-MS Project (Excel)
+   ─────────────────────────────────────────────────────────────
+   • ייבוא אקסל: לו"ז בסיסי (baseline) + לו"ז עדכני + % ביצוע
+   • 🔒 baseline ננעל בייבוא הראשון — לא נדרס בעדכונים
+   • סנכרון לפי ID + אימות שם (התראה על אי-התאמה)
+   • חלון תצוגה: החודש הקרוב + פיגורים
+   ═══════════════════════════════════════════════════════════════ */
+
+// ---------- מצב ----------
+window.mspTasks = window.mspTasks || [];
+let _mspStaged = null;   // תוצאת parse לפני אישור
+
+// ---------- עזרי תאריך ----------
+function mspDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  if (typeof v === 'number') { // Excel serial
+    const d = new Date(Date.UTC(1899, 11, 30) + v * 86400000);
+    return d.toISOString().slice(0, 10);
+  }
+  const s = String(v).trim();
+  // ISO כבר תקין: 2026-06-15
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  // "09 אוקטובר 2024 08:00"
+  const HE = {'ינואר':1,'פברואר':2,'מרץ':3,'אפריל':4,'מאי':5,'יוני':6,
+              'יולי':7,'אוגוסט':8,'ספטמבר':9,'אוקטובר':10,'נובמבר':11,'דצמבר':12};
+  m = s.match(/(\d{1,2})\s+([\u0590-\u05FF]+)\s+(\d{4})/);
+  if (m && HE[m[2]]) return `${m[3]}-${String(HE[m[2]]).padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  // DD/MM/YYYY או DD.MM.YY  (פורמט ישראלי — יום ראשון)
+  m = s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/);
+  if (m) {
+    let dd = +m[1], mm = +m[2], y = m[3];
+    if (y.length === 2) y = '20' + y;
+    if (mm > 12 && dd <= 12) { const t = dd; dd = mm; mm = t; } // הגנה
+    if (mm < 1 || mm > 12 || dd < 1 || dd > 31) return null;
+    return `${y}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+  }
+  return null;
+}
+const mspToday = () => new Date().toISOString().slice(0, 10);
+function mspDaysBetween(a, b) {
+  if (!a || !b) return null;
+  return Math.round((new Date(b) - new Date(a)) / 86400000);
+}
+function mspFmt(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-');
+  return `${d}/${m}/${y.slice(2)}`;
+}
+
+// ---------- זיהוי עמודות ----------
+function mspDetectCols(rows) {
+  // מחפש שורת כותרות ב-6 השורות הראשונות
+  for (let r = 0; r < Math.min(6, rows.length); r++) {
+    const row = (rows[r] || []).map(c => String(c == null ? '' : c).trim());
+    const idx = {};
+    row.forEach((c, i) => {
+      if (/^התחלה$/.test(c)) { if (idx.aStart == null) idx.aStart = i; else if (idx.bStart == null) idx.bStart = i; }
+      if (/^סיום\s*$/.test(c)) { if (idx.aEnd == null) idx.aEnd = i; else if (idx.bEnd == null) idx.bEnd = i; }
+      if (/בוצע|השלמ|%/.test(c)) idx.done = i;
+      if (/הערות/.test(c)) idx.note = i;
+    });
+    if (idx.aStart != null && idx.aEnd != null) {
+      idx.headerRow = r;
+      // ID ושם: 3 העמודות הראשונות
+      idx.id = 0; idx.name = 1; idx.dur = 2;
+      return idx;
+    }
+  }
+  return null;
+}
+
+// ---------- Parse ----------
+function mspParseRows(rows) {
+  const c = mspDetectCols(rows);
+  if (!c) throw new Error('לא זוהו עמודות התחלה/סיום. ודא שהגיליון כולל כותרות.');
+  const out = [], warn = [];
+  for (let r = c.headerRow + 1; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const id = row[c.id], name = row[c.name];
+    if (id == null || !name || String(name).trim() === '') continue;
+    const nid = parseInt(id, 10);
+    if (isNaN(nid)) continue;
+    const doneRaw = c.done != null ? String(row[c.done] || '').trim() : '';
+    const status = /^v$/i.test(doneRaw) ? 'done'
+                 : (doneRaw && doneRaw !== '-' ? 'in_progress' : 'todo');
+    out.push({
+      id: nid,
+      name: String(name).trim(),
+      dur: c.dur != null ? row[c.dur] : null,
+      start:    mspDate(row[c.aStart]),
+      end:      mspDate(row[c.aEnd]),
+      bl_start: c.bStart != null ? mspDate(row[c.bStart]) : null,
+      bl_end:   c.bEnd   != null ? mspDate(row[c.bEnd])   : null,
+      status,
+      note: c.note != null ? (row[c.note] || '') : ''
+    });
+  }
+  if (!out.length) throw new Error('לא נמצאו שורות משימה בגיליון.');
+  return { tasks: out, cols: c, warn };
+}
+
+// ---------- מיזוג ----------
+function mspMerge(incoming) {
+  const cur = window.mspTasks || [];
+  const byId = {}; cur.forEach(t => byId[t.id] = t);
+  const res = { added: 0, updated: 0, mismatch: [], blLocked: 0, tasks: [] };
+  const firstImport = cur.length === 0;
+
+  incoming.forEach(n => {
+    const ex = byId[n.id];
+    if (!ex) {
+      // חדשה — בייבוא ראשון גם נועלים baseline
+      const t = Object.assign({}, n, {
+        bl_start_locked: n.bl_start, bl_end_locked: n.bl_end,
+        subtasks: [], chapter: null, entrance: null, loc: null
+      });
+      res.tasks.push(t); res.added++;
+      if (t.bl_end_locked) res.blLocked++;
+    } else {
+      // אימות שם
+      if (ex.name !== n.name) res.mismatch.push({ id: n.id, was: ex.name, now: n.name });
+      // 🔒 baseline לא נדרס לעולם
+      const t = Object.assign({}, ex, {
+        name: n.name, dur: n.dur,
+        start: n.start, end: n.end,
+        status: n.status, note: n.note
+      });
+      // אם ה-baseline טרם ננעל (ייבוא ישן) — נעל עכשיו
+      if (!t.bl_end_locked && n.bl_end) {
+        t.bl_start_locked = n.bl_start; t.bl_end_locked = n.bl_end; res.blLocked++;
+      }
+      res.tasks.push(t); res.updated++;
+    }
+  });
+  // משימות שהיו ואינן בקובץ החדש — נשמרות, מסומנות
+  const inc = {}; incoming.forEach(n => inc[n.id] = 1);
+  cur.forEach(t => { if (!inc[t.id]) { t._missing = true; res.tasks.push(t); } });
+  res.firstImport = firstImport;
+  return res;
+}
+
+// ---------- חלון תצוגה ----------
+function mspWindow(tasks, monthsAhead) {
+  const today = mspToday();
+  const to = new Date(); to.setMonth(to.getMonth() + (monthsAhead || 2));
+  const toISO = to.toISOString().slice(0, 10);
+  return (tasks || []).filter(t => {
+    if (t.status === 'done') return false;
+    if (!t.start || !t.end) return false;
+    if (t.end < today) return true;                    // פיגור
+    return t.start <= toISO && t.end >= today;          // בחלון
+  }).map(t => Object.assign({}, t, {
+    late_days: t.end < today ? mspDaysBetween(t.end, today) : 0,
+    bl_dev: t.bl_end_locked ? mspDaysBetween(t.bl_end_locked, t.end) : null
+  })).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+}
+
+// ═══════════ ממשק ═══════════
+function openMspImport() {
+  const n = (window.mspTasks || []).length;
+  const html = `
+  <div class="modal-backdrop" id="msp-modal" onclick="if(event.target===this)closeMspImport()">
+    <div class="modal" style="max-width:760px">
+      <div class="modal-head">
+        <h3 style="margin:0">📥 ייבוא לוח זמנים</h3>
+        <button class="btn btn-sm" onclick="closeMspImport()">✕</button>
+      </div>
+      <div class="modal-body" id="msp-body">
+        ${n ? `<div style="background:var(--bg2);padding:10px;border-radius:8px;margin-bottom:12px;font-size:13px">
+                 📊 כרגע במערכת: <strong>${n}</strong> משימות.
+                 ייבוא חדש <strong>יעדכן</strong> תאריכים ואחוזי ביצוע.
+                 <span style="color:var(--gr)">🔒 ה-baseline לא ישתנה.</span>
+               </div>`
+             : `<div style="background:#FFF4E0;padding:10px;border-radius:8px;margin-bottom:12px;font-size:13px;color:#7a5a00">
+                 🔒 <strong>ייבוא ראשון</strong> — הלו"ז הבסיסי (baseline) ייקבע וננעל לצמיתות.
+                 ודא שזה הלו"ז החוזי הנכון.
+               </div>`}
+        <div id="msp-drop" style="border:2px dashed var(--bd);border-radius:12px;padding:34px;text-align:center;cursor:pointer;transition:.2s"
+             onclick="document.getElementById('msp-file').click()"
+             ondragover="event.preventDefault();this.style.borderColor='var(--brand-gold)'"
+             ondragleave="this.style.borderColor='var(--bd)'"
+             ondrop="event.preventDefault();this.style.borderColor='var(--bd)';mspHandleFile(event.dataTransfer.files[0])">
+          <div style="font-size:34px">📊</div>
+          <div style="margin-top:8px;font-weight:600">גרור קובץ Excel או לחץ לבחירה</div>
+          <div style="font-size:12px;color:var(--tx3);margin-top:6px">
+            עמודות: מספור · שם · משך · התחלה/סיום (עדכני) · התחלה/סיום (בסיסי) · בוצע
+          </div>
+        </div>
+        <input type="file" id="msp-file" accept=".xlsx,.xls" style="display:none"
+               onchange="mspHandleFile(this.files[0])">
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+function closeMspImport() { const m = document.getElementById('msp-modal'); if (m) m.remove(); }
+
+async function mspHandleFile(file) {
+  if (!file) return;
+  const body = document.getElementById('msp-body');
+  body.innerHTML = '<div style="text-align:center;padding:40px">⏳ קורא קובץ…</div>';
+  try {
+    if (typeof XLSX === 'undefined') await mspLoadXLSX();
+    const buf = await file.arrayBuffer();
+    const wbk = XLSX.read(buf, { type: 'array', cellDates: true });
+    // בוחר את הגיליון עם הכי הרבה שורות שמכיל עמודות מזוהות
+    let best = null;
+    for (const sn of wbk.SheetNames) {
+      const rows = XLSX.utils.sheet_to_json(wbk.Sheets[sn], { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+      try { const p = mspParseRows(rows);
+            if (!best || p.tasks.length > best.tasks.length) { best = p; best.sheet = sn; }
+      } catch (e) { /* גיליון לא מתאים */ }
+    }
+    if (!best) throw new Error('לא נמצא גיליון מתאים בקובץ.');
+    _mspStaged = best;
+    mspShowPreview(best, file.name);
+  } catch (e) {
+    body.innerHTML = `<div style="padding:20px;text-align:center">
+      <div style="font-size:34px">⚠️</div>
+      <div style="color:var(--rd);margin:10px 0;font-weight:600">${e.message}</div>
+      <button class="btn" onclick="closeMspImport();openMspImport()">נסה שוב</button></div>`;
+  }
+}
+
+function mspLoadXLSX() {
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = res; s.onerror = () => rej(new Error('טעינת ספריית Excel נכשלה'));
+    document.head.appendChild(s);
+  });
+}
+
+function mspShowPreview(parsed, fname) {
+  const m = mspMerge(parsed.tasks);
+  const win = mspWindow(m.tasks, 2);
+  const stat = { done: 0, prog: 0, todo: 0 };
+  parsed.tasks.forEach(t => stat[t.status === 'done' ? 'done' : t.status === 'in_progress' ? 'prog' : 'todo']++);
+
+  const rows = win.slice(0, 60).map(t => {
+    const dev = t.bl_dev != null
+      ? `<span style="color:${t.bl_dev > 60 ? 'var(--rd)' : t.bl_dev > 0 ? 'var(--am)' : 'var(--gr)'};font-weight:600">${t.bl_dev > 0 ? '+' : ''}${t.bl_dev}י</span>`
+      : '—';
+    const late = t.late_days ? `<span style="color:var(--rd)">⚠️${t.late_days}י</span>` : '';
+    return `<tr>
+      <td style="padding:5px;color:var(--tx3)">#${t.id}</td>
+      <td style="padding:5px;text-align:right">${t.name} ${late}</td>
+      <td style="padding:5px;white-space:nowrap;font-size:11px">${mspFmt(t.start)}→${mspFmt(t.end)}</td>
+      <td style="padding:5px;text-align:center;font-size:11px">${dev}</td></tr>`;
+  }).join('');
+
+  document.getElementById('msp-body').innerHTML = `
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:8px">📄 ${fname} · גיליון: ${parsed.sheet}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+      ${[['סה"כ', parsed.tasks.length, ''], ['חדשות', m.added, 'var(--gr)'],
+         ['עודכנו', m.updated, 'var(--bl)'], ['הושלמו', stat.done, 'var(--tx3)']]
+        .map(([l, v, c]) => `<div style="background:var(--bg2);padding:8px;border-radius:8px;text-align:center">
+          <div style="font-size:19px;font-weight:700;${c ? 'color:' + c : ''}">${v}</div>
+          <div style="font-size:10px;color:var(--tx3)">${l}</div></div>`).join('')}
+    </div>
+    ${m.blLocked ? `<div style="background:#E8F5E9;padding:8px;border-radius:8px;margin-bottom:10px;font-size:12px;color:#2E7D32">
+        🔒 ננעל baseline עבור <strong>${m.blLocked}</strong> משימות — לא ישתנה בעדכונים הבאים.</div>` : ''}
+    ${m.mismatch.length ? `<div style="background:#FFEBEE;padding:8px;border-radius:8px;margin-bottom:10px;font-size:12px;color:#C62828">
+        🚨 <strong>${m.mismatch.length}</strong> אי-התאמות שם (ID קיים עם שם אחר) — ייתכן שהמבנה השתנה.
+        <div style="font-size:11px;margin-top:4px">${m.mismatch.slice(0,3).map(x=>`#${x.id}: "${x.was}" → "${x.now}"`).join('<br>')}</div></div>` : ''}
+    <div style="font-weight:600;margin:10px 0 6px">📅 חלון עבודה — חודשיים קדימה + פיגורים (${win.length})</div>
+    <div style="max-height:290px;overflow:auto;border:1px solid var(--bd);border-radius:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead style="position:sticky;top:0;background:var(--bg2)"><tr>
+          <th style="padding:6px">#</th><th style="padding:6px">משימה</th>
+          <th style="padding:6px">תאריכים</th><th style="padding:6px">מול baseline</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="4" style="padding:16px;text-align:center;color:var(--tx3)">אין משימות בחלון</td></tr>'}</tbody>
+      </table>
+    </div>
+    ${win.length > 60 ? `<div style="font-size:11px;color:var(--tx3);margin-top:5px">מוצגות 60 ראשונות מתוך ${win.length}</div>` : ''}
+    <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+      <button class="btn" onclick="closeMspImport()">ביטול</button>
+      <button class="btn" style="background:var(--brand-gold);color:#fff;border-color:var(--brand-gold);font-weight:600"
+              onclick="mspConfirmImport()">✓ אשר וייבא</button>
+    </div>`;
+}
+
+function mspConfirmImport() {
+  if (!_mspStaged) return;
+  const m = mspMerge(_mspStaged.tasks);
+  window.mspTasks = m.tasks;
+  _mspStaged = null;
+  closeMspImport();
+  if (typeof saveAll === 'function') saveAll();
+  if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
+  if (typeof toast === 'function') toast(`✓ יובאו ${m.added + m.updated} משימות`);
+  else alert(`✓ יובאו ${m.added + m.updated} משימות`);
+  if (typeof renderAll === 'function') renderAll();
+}
+
+</script>
+</body></html>';
   const w=window.open('','_blank');w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);
 }
 
