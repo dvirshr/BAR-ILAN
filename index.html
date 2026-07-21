@@ -22,6 +22,7 @@
 body.on-dash .proj-inp,body.on-dash .itabs,body.on-dash .sum-tab{display:none!important}
 body.on-dash #hdr-proj-name{display:none}
 #dash-screen{padding:0;margin:0}
+body.on-dash #btn-msp{display:none!important}
 
 /* ── LIGHT THEME ── */
 html[data-theme="light"]{
@@ -2887,12 +2888,19 @@ function mspWindow(tasks, monthsAhead) {
 
 // ═══════════ ממשק ═══════════
 function openMspImport() {
+  // הגנה: חייב פרויקט פתוח
+  const pnEl = document.getElementById('proj-name');
+  const pn = pnEl ? (pnEl.value || '').trim() : '';
+  if (!pn || document.body.classList.contains('on-dash')) {
+    alert('יש לפתוח פרויקט לפני ייבוא לוח זמנים.\nהלו"ז משויך לפרויקט הפתוח.');
+    return;
+  }
   const n = (window.mspTasks || []).length;
   const html = `
   <div class="modal-backdrop" id="msp-modal" onclick="if(event.target===this)closeMspImport()">
     <div class="modal" style="max-width:760px">
       <div class="modal-head">
-        <h3 style="margin:0">📥 ייבוא לוח זמנים</h3>
+        <h3 style="margin:0">📥 ייבוא לוח זמנים <span style="font-size:12px;font-weight:400;color:var(--tx3)">· ${pn}</span></h3>
         <button class="btn btn-sm" onclick="closeMspImport()">✕</button>
       </div>
       <div class="modal-body" id="msp-body">
