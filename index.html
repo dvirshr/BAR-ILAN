@@ -2743,11 +2743,13 @@ let _mspStaged = null;   // תוצאת parse לפני אישור
 function mspDate(v) {
   if (!v) return null;
   if (v instanceof Date) return v.toISOString().slice(0, 10);
+  const s0 = String(v).trim();
+  if (!s0 || s0 === 'לא זמין' || s0 === 'NA' || s0 === 'N/A') return null;
   if (typeof v === 'number') { // Excel serial
     const d = new Date(Date.UTC(1899, 11, 30) + v * 86400000);
     return d.toISOString().slice(0, 10);
   }
-  const s = String(v).trim();
+  const s = s0;
   // ISO כבר תקין: 2026-06-15
   let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
@@ -2778,22 +2780,31 @@ function mspFmt(iso) {
   return `${d}/${m}/${y.slice(2)}`;
 }
 
-// ---------- זיהוי עמודות ----------
+// ---------- זיהוי עמודות (פורמט קבוע לפי שמות) ----------
 function mspDetectCols(rows) {
-  // מחפש שורת כותרות ב-6 השורות הראשונות
   for (let r = 0; r < Math.min(6, rows.length); r++) {
     const row = (rows[r] || []).map(c => String(c == null ? '' : c).trim());
-    const idx = {};
-    row.forEach((c, i) => {
-      if (/^התחלה$/.test(c)) { if (idx.aStart == null) idx.aStart = i; else if (idx.bStart == null) idx.bStart = i; }
-      if (/^סיום\s*$/.test(c)) { if (idx.aEnd == null) idx.aEnd = i; else if (idx.bEnd == null) idx.bEnd = i; }
-      if (/בוצע|השלמ|%/.test(c)) idx.done = i;
-      if (/הערות/.test(c)) idx.note = i;
-    });
-    if (idx.aStart != null && idx.aEnd != null) {
+    const find = (...names) => {
+      for (let i = 0; i < row.length; i++)
+        if (names.some(n => row[i] === n)) return i;
+      return null;
+    };
+    const idx = {
+      id:      find('מזהה_ייחודי', 'מזהה ייחודי', 'Unique ID', 'UID', 'ID'),
+      name:    find('שם', 'שם המשימה', 'Name'),
+      dur:     find('משך', 'Duration'),
+      // baseline (מתוכנן)
+      bStart:  find('התחלה', 'Start'),
+      bEnd:    find('סיום', 'Finish'),
+      // בפועל
+      aStart:  find('התחלה_בפועל', 'התחלה בפועל', 'Actual Start'),
+      aEnd:    find('סיום_בפועל', 'סיום בפועל', 'Actual Finish'),
+      done:    find('אחוז_ביצוע', 'אחוז ביצוע', '% ביצוע', '% Complete', 'בוצע'),
+      note:    find('הערות', 'Notes')
+    };
+    // חובה: שם + לפחות זוג תאריכים אחד
+    if (idx.name != null && (idx.bStart != null || idx.aStart != null)) {
       idx.headerRow = r;
-      // ID ושם: 3 העמודות הראשונות
-      idx.id = 0; idx.name = 1; idx.dur = 2;
       return idx;
     }
   }
@@ -2803,26 +2814,38 @@ function mspDetectCols(rows) {
 // ---------- Parse ----------
 function mspParseRows(rows) {
   const c = mspDetectCols(rows);
-  if (!c) throw new Error('לא זוהו עמודות התחלה/סיום. ודא שהגיליון כולל כותרות.');
+  if (!c) throw new Error('לא זוהו עמודות. ודא כותרות: מזהה_ייחודי, שם, התחלה, סיום, התחלה_בפועל, סיום_בפועל, אחוז_ביצוע.');
   const out = [], warn = [];
   for (let r = c.headerRow + 1; r < rows.length; r++) {
     const row = rows[r] || [];
-    const id = row[c.id], name = row[c.name];
-    if (id == null || !name || String(name).trim() === '') continue;
-    const nid = parseInt(id, 10);
-    if (isNaN(nid)) continue;
-    const doneRaw = c.done != null ? String(row[c.done] || '').trim() : '';
-    const status = /^v$/i.test(doneRaw) ? 'done'
-                 : (doneRaw && doneRaw !== '-' ? 'in_progress' : 'todo');
+    const name = c.name != null ? row[c.name] : null;
+    if (!name || String(name).trim() === '') continue;
+    // ID
+    let id = c.id != null ? row[c.id] : null;
+    id = id != null && String(id).trim() !== '' ? parseInt(id, 10) : null;
+    if (id == null || isNaN(id)) { id = r; } // גיבוי: מספר שורה
+    // אחוז ביצוע — עשרוני (0.3) או אחוז (30) או "V"
+    let pct = 0, status = 'todo';
+    if (c.done != null) {
+      const raw = String(row[c.done] == null ? '' : row[c.done]).trim();
+      if (/^v$/i.test(raw)) { pct = 100; }
+      else if (raw && raw !== '-' && raw !== 'לא זמין') {
+        let num = parseFloat(raw);
+        if (!isNaN(num)) pct = num <= 1 ? Math.round(num * 100) : Math.round(num);
+      }
+      status = pct >= 100 ? 'done' : (pct > 0 ? 'in_progress' : 'todo');
+    }
     out.push({
-      id: nid,
+      id,
       name: String(name).trim(),
       dur: c.dur != null ? row[c.dur] : null,
-      start:    mspDate(row[c.aStart]),
-      end:      mspDate(row[c.aEnd]),
+      // baseline (מתוכנן) = עמודות התחלה/סיום
       bl_start: c.bStart != null ? mspDate(row[c.bStart]) : null,
       bl_end:   c.bEnd   != null ? mspDate(row[c.bEnd])   : null,
-      status,
+      // בפועל/עדכני = *_בפועל
+      start: c.aStart != null ? mspDate(row[c.aStart]) : null,
+      end:   c.aEnd   != null ? mspDate(row[c.aEnd])   : null,
+      pct, status,
       note: c.note != null ? (row[c.note] || '') : ''
     });
   }
@@ -2877,18 +2900,23 @@ function mspWindow(tasks, monthsAhead) {
   const toISO = to.toISOString().slice(0, 10);
   return (tasks || []).filter(t => {
     if (t.status === 'done') return false;
-    if (!t.start || !t.end) return false;
-    if (t.end < today) return true;                    // פיגור
-    return t.start <= toISO && t.end >= today;          // בחלון
-  }).map(t => Object.assign({}, t, {
-    late_days: t.end < today ? mspDaysBetween(t.end, today) : 0,
-    bl_dev: t.bl_end_locked ? mspDaysBetween(t.bl_end_locked, t.end) : null
-  })).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+    // תאריך אפקטיבי: בפועל אם קיים, אחרת מתוכנן
+    const s = t.start || t.bl_start, e = t.end || t.bl_end;
+    if (!s || !e) return false;
+    if (e < today) return true;                    // פיגור
+    return s <= toISO && e >= today;                // בחלון
+  }).map(t => {
+    const e = t.end || t.bl_end;
+    return Object.assign({}, t, {
+      _s: t.start || t.bl_start, _e: e,
+      late_days: e < today ? mspDaysBetween(e, today) : 0,
+      bl_dev: (t.bl_end_locked && e) ? mspDaysBetween(t.bl_end_locked, e) : null
+    });
+  }).sort((a, b) => (a._s || '').localeCompare(b._s || ''));
 }
 
 // ═══════════ ממשק ═══════════
 function openMspImport() {
-  // הגנה: חייב פרויקט פתוח
   const pnEl = document.getElementById('proj-name');
   const pn = pnEl ? (pnEl.value || '').trim() : '';
   if (!pn || document.body.classList.contains('on-dash')) {
@@ -2983,7 +3011,7 @@ function mspShowPreview(parsed, fname) {
     return `<tr>
       <td style="padding:5px;color:var(--tx3)">#${t.id}</td>
       <td style="padding:5px;text-align:right">${t.name} ${late}</td>
-      <td style="padding:5px;white-space:nowrap;font-size:11px">${mspFmt(t.start)}→${mspFmt(t.end)}</td>
+      <td style="padding:5px;white-space:nowrap;font-size:11px">${mspFmt(t._s)}→${mspFmt(t._e)}</td>
       <td style="padding:5px;text-align:center;font-size:11px">${dev}</td></tr>`;
   }).join('');
 
