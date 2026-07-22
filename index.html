@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>תוכנית עבודה v22 — YBNIR</title>
+<title>תוכנית עבודה v23 — YBNIR</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
@@ -22,7 +22,7 @@
 body.on-dash .proj-inp,body.on-dash .itabs,body.on-dash .sum-tab{display:none!important}
 body.on-dash #hdr-proj-name{display:none}
 #dash-screen{padding:0;margin:0}
-body.on-dash #btn-msp{display:none!important}
+body.on-dash #btn-msp,body.on-dash #btn-sched{display:none!important}
 
 /* ── LIGHT THEME ── */
 html[data-theme="light"]{
@@ -480,7 +480,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   <div id="week-disp" style="font-size:11px;color:var(--tx2);background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:4px 10px;cursor:pointer;white-space:nowrap" onclick="openCalModal()" title="לחץ לשינוי תאריך"></div>
   <div class="hdr-acts">
     <button class="btn" onclick="openCloudProjectsModal()" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">☁ פרויקטים</button>
-    <button class="btn" id="btn-msp" aria-label="ייבוא לוח זמנים" onclick="openMspImport()" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">📥 לו"ז</button>
+    <button class="btn" id="btn-sched" aria-label="לוח זמנים" onclick="openSchedScreen()" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">📅 לו"ז</button>
+    <button class="btn" id="btn-msp" aria-label="ייבוא לוח זמנים" onclick="openMspImport()" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">📥 ייבוא</button>
     <button class="btn btn-green" aria-label="ייצוא דוחות" onclick="openExportModal()">⬇ ייצוא</button>
     <button class="btn btn-amber" aria-label="עבור לשבוע הבא" onclick="advanceWeek()">⏭ שבוע הבא</button>
     <button class="btn" aria-label="הדפסה" onclick="window.print()" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">🖨 הדפסה</button>
@@ -3057,6 +3058,161 @@ function mspConfirmImport() {
   if (typeof toast === 'function') toast(`✓ יובאו ${m.added + m.updated} משימות`);
   else alert(`✓ יובאו ${m.added + m.updated} משימות`);
   if (typeof renderAll === 'function') renderAll();
+}
+
+</script>
+<script id="sched-module">
+/* ═══════════════════════════════════════════════════════════════
+   YBNIR v23b · מסך לוח זמנים — חלון עבודה
+   ─────────────────────────────────────────────────────────────
+   • מציג את mspTasks בחלון: החודש+פיגורים / הכל / לפי פילטר
+   • baseline מול בפועל, סטייה, אחוז ביצוע
+   • כפתור "פרק למשימות" (יחובר ל-v23c)
+   ═══════════════════════════════════════════════════════════════ */
+
+let _schedFilter = 'window';   // window | all | late
+let _schedMonths = 2;
+
+function openSchedScreen() {
+  const pnEl = document.getElementById('proj-name');
+  const pn = pnEl ? (pnEl.value || '').trim() : '';
+  if (!pn || document.body.classList.contains('on-dash')) {
+    alert('יש לפתוח פרויקט כדי לראות את לוח הזמנים.');
+    return;
+  }
+  if (!(window.mspTasks || []).length) {
+    if (confirm('לא יובא לוח זמנים לפרויקט זה.\nלייבא עכשיו?')) openMspImport();
+    return;
+  }
+  let scr = document.getElementById('sched-screen');
+  if (!scr) {
+    scr = document.createElement('div');
+    scr.id = 'sched-screen';
+    scr.style.cssText = 'display:none;padding:0;margin:0';
+    document.body.appendChild(scr);
+  }
+  try { closeModal(); } catch (e) {}
+  scr.style.display = 'block';
+  const mc = document.getElementById('main-content'); if (mc) mc.style.display = 'none';
+  const bar = document.querySelector('.bld-bar'); if (bar) bar.style.display = 'none';
+  document.body.classList.add('on-sched');
+  renderSchedScreen();
+}
+
+function closeSchedScreen() {
+  const scr = document.getElementById('sched-screen'); if (scr) scr.style.display = 'none';
+  const mc = document.getElementById('main-content'); if (mc) mc.style.display = '';
+  const bar = document.querySelector('.bld-bar'); if (bar) bar.style.display = '';
+  document.body.classList.remove('on-sched');
+}
+
+// שיוך פרק+כניסה מהסימון (אם קיים ב-task), אחרת ריק
+function schedChapter(t) { return t.chapter || null; }
+function schedEntrance(t) { return t.entrance || null; }
+
+function renderSchedScreen() {
+  const scr = document.getElementById('sched-screen');
+  const all = window.mspTasks || [];
+  const today = mspToday();
+
+  // חישוב חלון
+  let list;
+  if (_schedFilter === 'all') {
+    list = all.filter(t => t.status !== 'done' || true); // הכל
+  } else if (_schedFilter === 'late') {
+    list = all.filter(t => {
+      const e = t.end || t.bl_end;
+      return t.status !== 'done' && e && e < today;
+    });
+  } else {
+    list = mspWindow(all, _schedMonths);
+  }
+
+  // העשרה + מיון
+  list = list.map(t => {
+    const s = t.start || t.bl_start, e = t.end || t.bl_end;
+    return Object.assign({}, t, {
+      _s: s, _e: e,
+      _late: (t.status !== 'done' && e && e < today) ? mspDaysBetween(e, today) : 0,
+      _dev: (t.bl_end_locked && e) ? mspDaysBetween(t.bl_end_locked, e) : null,
+      _subs: (t.subtasks || []).length
+    });
+  }).sort((a, b) => (a._s || '').localeCompare(b._s || ''));
+
+  // ספירות
+  const cW = mspWindow(all, _schedMonths).length;
+  const cLate = all.filter(t => { const e = t.end || t.bl_end; return t.status !== 'done' && e && e < today; }).length;
+  const cDone = all.filter(t => t.status === 'done').length;
+
+  const chip = (id, label, n, active) =>
+    `<button onclick="schedSetFilter('${id}')" style="padding:6px 14px;border-radius:20px;border:1px solid var(--bd);cursor:pointer;font-size:13px;font-weight:${active ? 600 : 400};background:${active ? 'var(--brand-gold)' : 'var(--bg2)'};color:${active ? '#fff' : 'var(--tx)'}">${label} ${n != null ? `<span style="opacity:.7">${n}</span>` : ''}</button>`;
+
+  const cards = list.length ? list.map(t => schedCard(t)).join('') :
+    `<div style="text-align:center;color:var(--tx3);padding:50px">אין משימות בתצוגה זו</div>`;
+
+  scr.innerHTML = `
+  <div style="max-width:1000px;margin:0 auto;padding:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h2 style="margin:0;font-size:20px">📅 לוח זמנים</h2>
+        <div style="font-size:12px;color:var(--tx3);margin-top:2px">${all.length} משימות · baseline נעול 🔒</div>
+      </div>
+      <button class="btn" onclick="closeSchedScreen()">✕ סגור</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+      ${chip('window', '📆 חלון עבודה', cW, _schedFilter === 'window')}
+      ${chip('late', '⚠️ בפיגור', cLate, _schedFilter === 'late')}
+      ${chip('all', '📋 הכל', all.length, _schedFilter === 'all')}
+      ${_schedFilter === 'window' ? `
+        <span style="margin-inline-start:auto;font-size:12px;color:var(--tx3)">חודשים קדימה:</span>
+        <select onchange="schedSetMonths(this.value)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx)">
+          ${[1,2,3].map(m => `<option value="${m}" ${m == _schedMonths ? 'selected' : ''}>${m}</option>`).join('')}
+        </select>` : ''}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">${cards}</div>
+  </div>`;
+}
+
+function schedCard(t) {
+  const dev = t._dev != null
+    ? `<span style="color:${t._dev > 60 ? 'var(--rd)' : t._dev > 0 ? 'var(--am)' : 'var(--gr)'};font-weight:600;font-size:12px">🔒 baseline ${mspFmt(t.bl_end_locked)} · ${t._dev > 0 ? '+' : ''}${t._dev}י</span>`
+    : '';
+  const late = t._late ? `<span style="background:var(--rd);color:#fff;padding:1px 8px;border-radius:10px;font-size:11px">⚠️ ${t._late} ימי פיגור</span>` : '';
+  const stColor = t.status === 'done' ? 'var(--gr)' : t.status === 'in_progress' ? 'var(--bl)' : 'var(--tx3)';
+  const stLabel = t.status === 'done' ? 'הושלם' : t.status === 'in_progress' ? `בביצוע ${t.pct}%` : 'טרם החל';
+  const ch = schedChapter(t), en = schedEntrance(t);
+  const tags = [
+    ch ? `<span style="background:rgba(200,150,60,.15);color:var(--brand-gold);padding:1px 8px;border-radius:4px;font-size:11px;border:1px solid rgba(200,150,60,.3)">פרק ${ch}</span>` : '',
+    en ? `<span style="background:var(--bg2);padding:1px 8px;border-radius:4px;font-size:11px">${en}</span>` : ''
+  ].filter(Boolean).join(' ');
+
+  return `
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:14px;border-inline-start:4px solid ${stColor}">
+    <div style="display:flex;justify-content:space-between;align-items:start;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:15px;margin-bottom:4px">${t.name}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">${tags} ${late}</div>
+        <div style="font-size:12px;color:var(--tx3)">
+          📅 ${mspFmt(t._s)} → ${mspFmt(t._e)}
+          <span style="color:${stColor};font-weight:600;margin-inline-start:8px">● ${stLabel}</span>
+        </div>
+        ${dev ? `<div style="margin-top:4px">${dev}</div>` : ''}
+      </div>
+      <div style="text-align:center">
+        <button class="btn btn-sm" onclick="schedBreakdown('${t.id}')" style="white-space:nowrap">
+          ${t._subs ? `📋 ${t._subs} משימות` : '➕ פרק'}
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function schedSetFilter(f) { _schedFilter = f; renderSchedScreen(); }
+function schedSetMonths(m) { _schedMonths = parseInt(m, 10); renderSchedScreen(); }
+
+// placeholder — יחובר ב-v23c (מסך פירוק)
+function schedBreakdown(id) {
+  alert('מסך פירוק המשימה — ייבנה בשלב הבא (v23c).\nמשימה #' + id);
 }
 
 </script>
