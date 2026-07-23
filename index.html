@@ -2794,6 +2794,8 @@ function mspDetectCols(rows) {
       id:      find('מזהה_ייחודי', 'מזהה ייחודי', 'Unique ID', 'UID', 'ID'),
       name:    find('שם', 'שם המשימה', 'Name'),
       dur:     find('משך', 'Duration'),
+      parent:  find('שם_פעילות_הערסל', 'שם פעילות הערסל', 'Summary Task Name'),
+      level:   find('רמת_חלוקה', 'רמת חלוקה', 'Outline Level'),
       // baseline (מתוכנן)
       bStart:  find('התחלה', 'Start'),
       bEnd:    find('סיום', 'Finish'),
@@ -2847,6 +2849,8 @@ function mspParseRows(rows) {
       start: c.aStart != null ? mspDate(row[c.aStart]) : null,
       end:   c.aEnd   != null ? mspDate(row[c.aEnd])   : null,
       pct, status,
+      parent: c.parent != null ? String(row[c.parent] || '').trim() : '',
+      level:  c.level  != null ? (parseInt(row[c.level], 10) || 0) : 0,
       note: c.note != null ? (row[c.note] || '') : ''
     });
   }
@@ -2878,7 +2882,8 @@ function mspMerge(incoming) {
       const t = Object.assign({}, ex, {
         name: n.name, dur: n.dur,
         start: n.start, end: n.end,
-        status: n.status, note: n.note
+        status: n.status, note: n.note,
+        pct: n.pct, parent: n.parent, level: n.level
       });
       // אם ה-baseline טרם ננעל (ייבוא ישן) — נעל עכשיו
       if (!t.bl_end_locked && n.bl_end) {
@@ -2918,18 +2923,12 @@ function mspWindow(tasks, monthsAhead) {
 
 // ═══════════ ממשק ═══════════
 function openMspImport() {
-  const pnEl = document.getElementById('proj-name');
-  const pn = pnEl ? (pnEl.value || '').trim() : '';
-  if (!pn || document.body.classList.contains('on-dash')) {
-    alert('יש לפתוח פרויקט לפני ייבוא לוח זמנים.\nהלו"ז משויך לפרויקט הפתוח.');
-    return;
-  }
   const n = (window.mspTasks || []).length;
   const html = `
   <div class="modal-backdrop" id="msp-modal" onclick="if(event.target===this)closeMspImport()">
     <div class="modal" style="max-width:760px">
       <div class="modal-head">
-        <h3 style="margin:0">📥 ייבוא לוח זמנים <span style="font-size:12px;font-weight:400;color:var(--tx3)">· ${pn}</span></h3>
+        <h3 style="margin:0">📥 ייבוא לוח זמנים</h3>
         <button class="btn btn-sm" onclick="closeMspImport()">✕</button>
       </div>
       <div class="modal-body" id="msp-body">
@@ -3070,6 +3069,28 @@ function mspConfirmImport() {
    • כפתור "פרק למשימות" (יחובר ל-v23c)
    ═══════════════════════════════════════════════════════════════ */
 
+
+// ---------- סינון: רק ביצוע פיזי ----------
+const SCHED_SKIP_PARENT = [/אישור/, /מו"מ/, /בחיר/, /התקשרו/, /הסכמ/, /תכנון/, /הגשה/, /הזמנ/, /אספק/];
+const SCHED_SKIP_SELF   = [/^אישור/, /אישורי/, /מו"מ/, /בחיר/, /קבלת /, /הגשה לאישור/, /הזמנ/, /^אספק/,
+                            /^מדיד/, /מדידה/, /מדידת/, /^מידות/, /SHOP DRAWING/i, /פיקוח עירוני/, /טופס 4/,
+                            /התקשרו/, /הסכמ/, /^תכנון/];
+function schedIsSkip(t) {
+  const nm = t.name || '', pa = t.parent || '';
+  if (SCHED_SKIP_SELF.some(r => r.test(nm))) return true;
+  if (pa && SCHED_SKIP_PARENT.some(r => r.test(pa))) return true;
+  return false;
+}
+// ערסל = יש משימות שמצביעות עליו כהורה
+let _schedParents = null;
+function schedIsSummary(t, all) {
+  if (!_schedParents) {
+    _schedParents = {};
+    (all || []).forEach(x => { if (x.parent) _schedParents[x.parent] = 1; });
+  }
+  return !!_schedParents[t.name];
+}
+
 let _schedFilter = 'window';   // window | all | late
 let _schedMonths = 2;
 
@@ -3115,17 +3136,20 @@ function renderSchedScreen() {
   const all = window.mspTasks || [];
   const today = mspToday();
 
+  _schedParents = null;  // reset cache
+  const exec = all.filter(t => !schedIsSkip(t) && !schedIsSummary(t, all));
+
   // חישוב חלון
   let list;
   if (_schedFilter === 'all') {
-    list = all.filter(t => t.status !== 'done' || true); // הכל
+    list = exec.slice();
   } else if (_schedFilter === 'late') {
-    list = all.filter(t => {
+    list = exec.filter(t => {
       const e = t.end || t.bl_end;
       return t.status !== 'done' && e && e < today;
     });
   } else {
-    list = mspWindow(all, _schedMonths);
+    list = mspWindow(exec, _schedMonths);
   }
 
   // העשרה + מיון
@@ -3140,9 +3164,9 @@ function renderSchedScreen() {
   }).sort((a, b) => (a._s || '').localeCompare(b._s || ''));
 
   // ספירות
-  const cW = mspWindow(all, _schedMonths).length;
-  const cLate = all.filter(t => { const e = t.end || t.bl_end; return t.status !== 'done' && e && e < today; }).length;
-  const cDone = all.filter(t => t.status === 'done').length;
+  const cW = mspWindow(exec, _schedMonths).length;
+  const cLate = exec.filter(t => { const e = t.end || t.bl_end; return t.status !== 'done' && e && e < today; }).length;
+  const cAll = exec.length;
 
   const chip = (id, label, n, active) =>
     `<button onclick="schedSetFilter('${id}')" style="padding:6px 14px;border-radius:20px;border:1px solid var(--bd);cursor:pointer;font-size:13px;font-weight:${active ? 600 : 400};background:${active ? 'var(--brand-gold)' : 'var(--bg2)'};color:${active ? '#fff' : 'var(--tx)'}">${label} ${n != null ? `<span style="opacity:.7">${n}</span>` : ''}</button>`;
@@ -3155,14 +3179,14 @@ function renderSchedScreen() {
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
       <div>
         <h2 style="margin:0;font-size:20px">📅 לוח זמנים</h2>
-        <div style="font-size:12px;color:var(--tx3);margin-top:2px">${all.length} משימות · baseline נעול 🔒</div>
+        <div style="font-size:12px;color:var(--tx3);margin-top:2px">${exec.length} משימות ביצוע · מתוך ${all.length} בלו"ז · baseline נעול 🔒</div>
       </div>
       <button class="btn" onclick="closeSchedScreen()">✕ סגור</button>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
       ${chip('window', '📆 חלון עבודה', cW, _schedFilter === 'window')}
       ${chip('late', '⚠️ בפיגור', cLate, _schedFilter === 'late')}
-      ${chip('all', '📋 הכל', all.length, _schedFilter === 'all')}
+      ${chip('all', '📋 הכל', cAll, _schedFilter === 'all')}
       ${_schedFilter === 'window' ? `
         <span style="margin-inline-start:auto;font-size:12px;color:var(--tx3)">חודשים קדימה:</span>
         <select onchange="schedSetMonths(this.value)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx)">
@@ -3190,7 +3214,8 @@ function schedCard(t) {
   <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:12px;padding:14px;border-inline-start:4px solid ${stColor}">
     <div style="display:flex;justify-content:space-between;align-items:start;gap:10px">
       <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:15px;margin-bottom:4px">${t.name}</div>
+        <div style="font-weight:600;font-size:15px;margin-bottom:2px">${t.name}</div>
+        ${t.parent ? `<div style="font-size:12px;color:var(--brand-gold);margin-bottom:5px">📍 ${t.parent}</div>` : ''}
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">${tags} ${late}</div>
         <div style="font-size:12px;color:var(--tx3)">
           📅 ${mspFmt(t._s)} → ${mspFmt(t._e)}
