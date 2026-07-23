@@ -3091,6 +3091,7 @@ function schedIsSummary(t, all) {
   return !!_schedParents[t.name];
 }
 
+let _schedOpen = {};   // אילו קבוצות פתוחות
 let _schedFilter = 'window';   // window | all | late
 let _schedMonths = 2;
 
@@ -3171,7 +3172,39 @@ function renderSchedScreen() {
   const chip = (id, label, n, active) =>
     `<button onclick="schedSetFilter('${id}')" style="padding:6px 14px;border-radius:20px;border:1px solid var(--bd);cursor:pointer;font-size:13px;font-weight:${active ? 600 : 400};background:${active ? 'var(--brand-gold)' : 'var(--bg2)'};color:${active ? '#fff' : 'var(--tx)'}">${label} ${n != null ? `<span style="opacity:.7">${n}</span>` : ''}</button>`;
 
-  const cards = list.length ? list.map(t => schedCard(t)).join('') :
+  // ── קיבוץ לפי מיקום (ערסל) ──
+  const groups = {};
+  list.forEach(t => { const k = t.parent || '— ללא מיקום'; (groups[k] = groups[k] || []).push(t); });
+  const gKeys = Object.keys(groups).sort((a, b) => {
+    const fa = groups[a][0]._s || '', fb = groups[b][0]._s || '';
+    return fa.localeCompare(fb);
+  });
+  // ברירת מחדל: הראשונה פתוחה
+  if (!Object.keys(_schedOpen).length && gKeys.length) _schedOpen[gKeys[0]] = true;
+
+  const cards = gKeys.length ? gKeys.map(k => {
+    const g = groups[k], open = !!_schedOpen[k];
+    const nLate = g.filter(x => x._late).length;
+    const nProg = g.filter(x => x.status === 'in_progress').length;
+    const dates = g.map(x => x._s).filter(Boolean).sort();
+    const ends  = g.map(x => x._e).filter(Boolean).sort();
+    const span = dates.length ? `${mspFmt(dates[0])} → ${mspFmt(ends[ends.length-1])}` : '';
+    return `
+    <div style="border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--sf)">
+      <div onclick="schedToggle('${k.replace(/'/g,"\\'")}')"
+           style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:var(--bg2);user-select:none">
+        <span style="font-size:13px;transition:.2s;display:inline-block;transform:rotate(${open?'90':'0'}deg)">▶</span>
+        <span style="font-weight:700;font-size:15px;color:var(--brand-gold)">📍 ${k}</span>
+        <span style="background:var(--sf);padding:1px 9px;border-radius:10px;font-size:12px">${g.length}</span>
+        ${nProg ? `<span style="background:rgba(80,140,220,.18);color:var(--bl);padding:1px 8px;border-radius:10px;font-size:11px">${nProg} בביצוע</span>` : ''}
+        ${nLate ? `<span style="background:rgba(200,60,60,.18);color:var(--rd);padding:1px 8px;border-radius:10px;font-size:11px">⚠️ ${nLate}</span>` : ''}
+        <span style="margin-inline-start:auto;font-size:11px;color:var(--tx3)">${span}</span>
+      </div>
+      <div style="display:${open?'flex':'none'};flex-direction:column;gap:8px;padding:${open?'10px':'0'}">
+        ${g.map(t => schedCard(t)).join('')}
+      </div>
+    </div>`;
+  }).join('') :
     `<div style="text-align:center;color:var(--tx3);padding:50px">אין משימות בתצוגה זו</div>`;
 
   scr.innerHTML = `
@@ -3192,6 +3225,10 @@ function renderSchedScreen() {
         <select onchange="schedSetMonths(this.value)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx)">
           ${[1,2,3].map(m => `<option value="${m}" ${m == _schedMonths ? 'selected' : ''}>${m}</option>`).join('')}
         </select>` : ''}
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <button class="btn btn-sm" onclick="schedExpandAll(1)">⊞ פתח הכל</button>
+      <button class="btn btn-sm" onclick="schedExpandAll(0)">⊟ סגור הכל</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">${cards}</div>
   </div>`;
@@ -3215,7 +3252,7 @@ function schedCard(t) {
     <div style="display:flex;justify-content:space-between;align-items:start;gap:10px">
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;font-size:15px;margin-bottom:2px">${t.name}</div>
-        ${t.parent ? `<div style="font-size:12px;color:var(--brand-gold);margin-bottom:5px">📍 ${t.parent}</div>` : ''}
+
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">${tags} ${late}</div>
         <div style="font-size:12px;color:var(--tx3)">
           📅 ${mspFmt(t._s)} → ${mspFmt(t._e)}
@@ -3232,6 +3269,14 @@ function schedCard(t) {
   </div>`;
 }
 
+function schedToggle(k){ _schedOpen[k]=!_schedOpen[k]; renderSchedScreen(); }
+function schedExpandAll(v){
+  const all=window.mspTasks||[];
+  _schedOpen={};
+  if(v){ all.forEach(t=>{ if(t.parent) _schedOpen[t.parent]=true; }); _schedOpen['— ללא מיקום']=true; }
+  else { _schedOpen={_none:1}; }
+  renderSchedScreen();
+}
 function schedSetFilter(f) { _schedFilter = f; renderSchedScreen(); }
 function schedSetMonths(m) { _schedMonths = parseInt(m, 10); renderSchedScreen(); }
 
