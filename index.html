@@ -3344,9 +3344,237 @@ function schedExpandAll(v){
 function schedSetFilter(f) { _schedFilter = f; renderSchedScreen(); }
 function schedSetMonths(m) { _schedMonths = parseInt(m, 10); renderSchedScreen(); }
 
-// placeholder — יחובר ב-v23c (מסך פירוק)
+
+
+</script>
+<script id="bd-module">
+/* ═══════════════════════════════════════════════════════════════
+   YBNIR v24a · מסך פירוק משימה
+   ─────────────────────────────────────────────────────────────
+   • משימת-אב מהלו"ז → משימות-בת שמנה"ע יוצר
+   • תבניות מוצעות (ניתנות לעריכה/מחיקה מלאה)
+   • כל בת: אזור · קבלן/פרק · כ"א · תאריכים · הערות
+   ═══════════════════════════════════════════════════════════════ */
+
+// ---------- תבניות פירוק ----------
+const BD_TEMPLATES = {
+  'תקרה': [
+    { name: 'טפסנות',            ch: '02', days: 5, w: 4 },
+    { name: 'ברזל',              ch: '02', days: 6, w: 4 },
+    { name: 'הכנות חשמל',        ch: '08', days: 3, w: 2 },
+    { name: 'הכנות אינסטלציה',   ch: '07', days: 3, w: 2 },
+    { name: 'יציקה',             ch: '02', days: 1, w: 8 }
+  ],
+  'עמודים': [
+    { name: 'ברזל עמודים',  ch: '02', days: 3, w: 3 },
+    { name: 'טפסנות',       ch: '02', days: 3, w: 4 },
+    { name: 'יציקה',        ch: '02', days: 1, w: 5 }
+  ],
+  'קירות': [
+    { name: 'ברזל',    ch: '02', days: 4, w: 3 },
+    { name: 'טפסנות',  ch: '02', days: 4, w: 4 },
+    { name: 'יציקה',   ch: '02', days: 1, w: 6 }
+  ],
+  'רצפה': [
+    { name: 'בטון רזה',        ch: '02', days: 2, w: 3 },
+    { name: 'איטום',           ch: '05', days: 3, w: 2 },
+    { name: 'ברזל',            ch: '02', days: 6, w: 4 },
+    { name: 'הכנות מערכות',    ch: '07', days: 3, w: 2 },
+    { name: 'יציקה',           ch: '02', days: 1, w: 8 }
+  ],
+  'גמר': [
+    { name: 'טיח',     ch: '09', days: 6, w: 4 },
+    { name: 'ריצוף',   ch: '10', days: 6, w: 4 },
+    { name: 'צבע',     ch: '11', days: 4, w: 3 },
+    { name: 'אביזרים', ch: '08', days: 3, w: 2 }
+  ]
+};
+
+function bdSuggestTemplate(name) {
+  const n = name || '';
+  if (/תקרה|רצפה כפולה/.test(n)) return 'תקרה';
+  if (/עמוד/.test(n)) return 'עמודים';
+  if (/קיר|גרעין|אלמנטים אנכ/.test(n)) return 'קירות';
+  if (/רפסוד|רצפ/.test(n)) return 'רצפה';
+  if (/גמר|טיח|ריצוף|צבע/.test(n)) return 'גמר';
+  return null;
+}
+
+// ---------- עזרי תאריך (ימי עבודה) ----------
+function bdAddWorkDays(iso, n) {
+  if (!iso) return null;
+  const d = new Date(iso + 'T00:00:00');
+  let added = 0;
+  while (added < n) {
+    d.setDate(d.getDate() + 1);
+    const dow = d.getDay();
+    if (dow !== 5 && dow !== 6) added++;   // דילוג שישי-שבת
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+// ---------- מציאת משימה ----------
+function bdFind(id) {
+  return (window.mspTasks || []).find(t => String(t.id) === String(id));
+}
+
+// ---------- מסך ראשי ----------
 function schedBreakdown(id) {
-  alert('מסך פירוק המשימה — ייבנה בשלב הבא (v23c).\nמשימה #' + id);
+  const t = bdFind(id);
+  if (!t) { alert('משימה לא נמצאה'); return; }
+  t.subtasks = t.subtasks || [];
+  bdRender(id);
+}
+
+function bdRender(id) {
+  const t = bdFind(id);
+  const subs = t.subtasks || [];
+  const totalMd = subs.reduce((s, x) => s + (+x.workers || 0) * (+x.days || 0), 0);
+  const trades = [...new Set(subs.map(x => x.contractor).filter(Boolean))];
+  const tmpl = bdSuggestTemplate(t.name);
+
+  const rows = subs.length ? subs.map((s, i) => `
+    <tr style="border-bottom:1px solid var(--bd)">
+      <td style="padding:6px 4px">
+        <input value="${(s.name||'').replace(/"/g,'&quot;')}" onchange="bdSet('${id}',${i},'name',this.value)"
+               style="width:100%;background:transparent;border:none;color:var(--tx);font-size:13px;font-weight:600">
+      </td>
+      <td style="padding:6px 4px">
+        <input value="${s.zone||''}" placeholder="אזור" onchange="bdSet('${id}',${i},'zone',this.value)"
+               style="width:70px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:2px 5px">
+      </td>
+      <td style="padding:6px 4px">
+        <input value="${s.contractor||''}" placeholder="קבלן" onchange="bdSet('${id}',${i},'contractor',this.value)"
+               style="width:88px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:2px 5px">
+      </td>
+      <td style="padding:6px 4px;text-align:center">
+        <input type="number" min="0" value="${s.workers||0}" onchange="bdSet('${id}',${i},'workers',this.value)"
+               style="width:46px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:2px;text-align:center">
+      </td>
+      <td style="padding:6px 4px;text-align:center">
+        <input type="number" min="0" step="0.5" value="${s.days||0}" onchange="bdSet('${id}',${i},'days',this.value)"
+               style="width:46px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:2px;text-align:center">
+      </td>
+      <td style="padding:6px 4px;font-size:11px;color:var(--tx3);white-space:nowrap">
+        ${s.start ? mspFmt(s.start) : '—'}${s.end ? ' → ' + mspFmt(s.end) : ''}
+      </td>
+      <td style="padding:6px 4px">
+        <input value="${(s.note||'').replace(/"/g,'&quot;')}" placeholder="הערות" onchange="bdSet('${id}',${i},'note',this.value)"
+               style="width:100%;min-width:90px;background:transparent;border:none;color:var(--tx3);font-size:12px">
+      </td>
+      <td style="padding:6px 2px;text-align:center">
+        <button onclick="bdDel('${id}',${i})" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:15px">🗑</button>
+      </td>
+    </tr>`).join('') :
+    `<tr><td colspan="8" style="padding:26px;text-align:center;color:var(--tx3)">
+       אין משימות-בת. ${tmpl ? `הצע תבנית <strong>"${tmpl}"</strong> או ` : ''}הוסף ידנית.
+     </td></tr>`;
+
+  document.getElementById('modal-root').innerHTML = `
+  <div class="modal-overlay" onclick="if(this===event.target)closeModal()">
+    <div class="modal" style="max-width:940px;max-height:92vh;overflow-y:auto">
+      <div style="border-bottom:1px solid var(--bd);padding-bottom:10px;margin-bottom:12px">
+        <div style="font-size:17px;font-weight:700">${t.name}</div>
+        <div style="font-size:12px;color:var(--brand-gold);margin-top:2px">📍 ${t.parent || '—'}</div>
+        <div style="font-size:12px;color:var(--tx3);margin-top:4px">
+          📅 ${mspFmt(t.start || t.bl_start)} → ${mspFmt(t.end || t.bl_end)}
+          ${t.bl_end_locked ? ` · 🔒 baseline ${mspFmt(t.bl_end_locked)}` : ''}
+          ${t.pct ? ` · ${t.pct}%` : ''}
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="bdAdd('${id}')">➕ הוסף משימה</button>
+        ${tmpl ? `<button class="btn btn-sm" onclick="bdApplyTemplate('${id}','${tmpl}')"
+                    style="background:var(--brand-gold);color:#fff;border-color:var(--brand-gold)">📋 הצע פירוק "${tmpl}"</button>` : ''}
+        <select onchange="if(this.value)bdApplyTemplate('${id}',this.value);this.value=''"
+                style="padding:4px 8px;border-radius:6px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx);font-size:13px">
+          <option value="">תבנית אחרת…</option>
+          ${Object.keys(BD_TEMPLATES).map(k => `<option value="${k}">${k}</option>`).join('')}
+        </select>
+      </div>
+
+      <div style="overflow-x:auto;border:1px solid var(--bd);border-radius:8px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead style="background:var(--bg2)">
+            <tr>
+              <th style="padding:7px 4px;text-align:right;font-size:12px">משימה</th>
+              <th style="padding:7px 4px;font-size:12px">אזור</th>
+              <th style="padding:7px 4px;font-size:12px">קבלן</th>
+              <th style="padding:7px 4px;font-size:12px">כ״א</th>
+              <th style="padding:7px 4px;font-size:12px">ימים</th>
+              <th style="padding:7px 4px;font-size:12px">תאריכים</th>
+              <th style="padding:7px 4px;text-align:right;font-size:12px">הערות</th>
+              <th style="padding:7px 2px"></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+
+      ${subs.length ? `
+      <div style="display:flex;gap:14px;margin-top:10px;padding:9px 12px;background:var(--bg2);border-radius:8px;font-size:13px;flex-wrap:wrap">
+        <span><strong>${subs.length}</strong> משימות</span>
+        <span>Σ <strong>${totalMd}</strong> ימי-עבודה</span>
+        ${trades.length ? `<span><strong>${trades.length}</strong> קבלנים</span>` : ''}
+      </div>` : ''}
+
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+        <button class="btn" onclick="closeModal()">סגור</button>
+        <button class="btn" style="background:var(--brand-gold);color:#fff;border-color:var(--brand-gold);font-weight:600"
+                onclick="bdSave('${id}')">💾 שמור</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---------- פעולות ----------
+function bdAdd(id) {
+  const t = bdFind(id);
+  t.subtasks = t.subtasks || [];
+  const last = t.subtasks[t.subtasks.length - 1];
+  const start = last && last.end ? last.end : (t.start || t.bl_start);
+  t.subtasks.push({ name: '', zone: '', contractor: '', workers: 0, days: 1,
+                    start, end: bdAddWorkDays(start, 1), note: '' });
+  bdRender(id);
+}
+
+function bdApplyTemplate(id, key) {
+  const t = bdFind(id), tpl = BD_TEMPLATES[key];
+  if (!tpl) return;
+  if ((t.subtasks || []).length && !confirm('להחליף את הפירוק הקיים בתבנית "' + key + '"?')) return;
+  let cur = t.start || t.bl_start;
+  t.subtasks = tpl.map(x => {
+    const s = cur, e = bdAddWorkDays(s, x.days);
+    cur = e;
+    return { name: x.name, zone: '', contractor: '', chapter: x.ch,
+             workers: x.w, days: x.days, start: s, end: e, note: '' };
+  });
+  bdRender(id);
+}
+
+function bdSet(id, i, field, val) {
+  const t = bdFind(id), s = t.subtasks[i];
+  if (!s) return;
+  s[field] = (field === 'workers' || field === 'days') ? (+val || 0) : val;
+  if (field === 'days' && s.start) s.end = bdAddWorkDays(s.start, +val || 0);
+  if (field === 'workers' || field === 'days') bdRender(id);
+}
+
+function bdDel(id, i) {
+  const t = bdFind(id);
+  t.subtasks.splice(i, 1);
+  bdRender(id);
+}
+
+function bdSave(id) {
+  const t = bdFind(id);
+  t.subtasks = (t.subtasks || []).filter(s => (s.name || '').trim());
+  if (typeof saveAll === 'function') saveAll();
+  if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
+  closeModal();
+  if (typeof renderSchedScreen === 'function') renderSchedScreen();
+  if (typeof toast === 'function') toast('✓ נשמר');
 }
 
 </script>
