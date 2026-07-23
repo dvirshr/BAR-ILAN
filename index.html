@@ -3288,7 +3288,7 @@ function renderSchedScreen() {
       ${_schedFilter === 'window' ? `
         <span style="margin-inline-start:auto;font-size:12px;color:var(--tx3)">חודשים קדימה:</span>
         <select onchange="schedSetMonths(this.value)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx)">
-          ${[1,2,3].map(m => `<option value="${m}" ${m == _schedMonths ? 'selected' : ''}>${m}</option>`).join('')}
+          ${[1,2,3].map(m => `<option value="${m}" style="background:var(--sf);color:var(--tx)" ${m == _schedMonths ? 'selected' : ''}>${m}</option>`).join('')}
         </select>` : ''}
     </div>
     ${(typeof ordAtRisk==='function' && ordAtRisk().length) ? `
@@ -3505,7 +3505,7 @@ function bdRender(id) {
         <select onchange="if(this.value)bdApplyTemplate('${id}',this.value);this.value=''"
                 style="padding:4px 8px;border-radius:6px;border:1px solid var(--bd);background:var(--bg2);color:var(--tx);font-size:13px">
           <option value="">תבנית אחרת…</option>
-          ${Object.keys(BD_TEMPLATES).map(k => `<option value="${k}">${k}</option>`).join('')}
+          ${Object.keys(BD_TEMPLATES).map(k => `<option value="${k}" style="background:var(--sf);color:var(--tx)">${k}</option>`).join('')}
         </select>
       </div>
 
@@ -3735,7 +3735,7 @@ function ordRender(taskId) {
       <td style="padding:6px 4px">
         <select onchange="ordSet('${taskId}',${i},'material',this.value)"
                 style="background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:3px">
-          ${Object.keys(ORD_LEAD).map(m => `<option ${o.material === m ? 'selected' : ''}>${m}</option>`).join('')}
+          ${Object.keys(ORD_LEAD).map(m => `<option style="background:var(--sf);color:var(--tx)" ${o.material === m ? 'selected' : ''}>${m}</option>`).join('')}
         </select>
       </td>
       <td style="padding:6px 4px"><input value="${o.qty||''}" placeholder="כמות" onchange="ordSet('${taskId}',${i},'qty',this.value)"
@@ -3750,7 +3750,7 @@ function ordRender(taskId) {
       <td style="padding:6px 4px">
         <select onchange="ordSet('${taskId}',${i},'status',this.value)"
                 style="background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:3px">
-          ${['טרם','הוזמן','סופק'].map(s => `<option ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+          ${['טרם','הוזמן','סופק'].map(s => `<option style="background:var(--sf);color:var(--tx)" ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}
         </select>
       </td>
       <td style="padding:6px 2px;text-align:center">
