@@ -3070,6 +3070,27 @@ function mspConfirmImport() {
    ═══════════════════════════════════════════════════════════════ */
 
 
+
+// ---------- בניית עץ ערסלים (2 רמות) ----------
+// שימוש ב-level + סדר: לכל ערסל, מוצא את הערסל שמעליו ברמה
+function schedBuildTree(all) {
+  const map = {};        // שם ערסל -> {level, parent}
+  const stack = {};      // level -> שם
+  (all || []).forEach(t => {
+    const lv = t.level || 0;
+    // נקה רמות עמוקות יותר
+    Object.keys(stack).forEach(k => { if (+k >= lv) delete stack[k]; });
+    if (t.parent && !map[t.parent]) {
+      // ההורה נמצא ברמה lv-1
+      const pl = lv - 1;
+      const gp = stack[pl - 1] || null;
+      map[t.parent] = { level: pl, parent: gp };
+    }
+    stack[lv] = t.name;
+  });
+  return map;
+}
+
 // ---------- סינון: רק ביצוע פיזי ----------
 const SCHED_SKIP_PARENT = [/אישור/, /מו"מ/, /בחיר/, /התקשרו/, /הסכמ/, /תכנון/, /הגשה/, /הזמנ/, /אספק/];
 const SCHED_SKIP_SELF   = [/^אישור/, /אישורי/, /מו"מ/, /בחיר/, /קבלת /, /הגשה לאישור/, /הזמנ/, /^אספק/,
@@ -3172,36 +3193,77 @@ function renderSchedScreen() {
   const chip = (id, label, n, active) =>
     `<button onclick="schedSetFilter('${id}')" style="padding:6px 14px;border-radius:20px;border:1px solid var(--bd);cursor:pointer;font-size:13px;font-weight:${active ? 600 : 400};background:${active ? 'var(--brand-gold)' : 'var(--bg2)'};color:${active ? '#fff' : 'var(--tx)'}">${label} ${n != null ? `<span style="opacity:.7">${n}</span>` : ''}</button>`;
 
-  // ── קיבוץ לפי מיקום (ערסל) ──
-  const groups = {};
-  list.forEach(t => { const k = t.parent || '— ללא מיקום'; (groups[k] = groups[k] || []).push(t); });
-  const gKeys = Object.keys(groups).sort((a, b) => {
-    const fa = groups[a][0]._s || '', fb = groups[b][0]._s || '';
+  // ── קיבוץ 2 רמות: ערסל-על → ערסל → משימות ──
+  const tree = schedBuildTree(all);
+  const byParent = {};
+  list.forEach(t => { const k = t.parent || '— ללא מיקום'; (byParent[k] = byParent[k] || []).push(t); });
+
+  // קבץ ערסלים תחת ערסל-העל שלהם
+  const top = {};
+  Object.keys(byParent).forEach(k => {
+    const info = tree[k];
+    let gp = info && info.parent ? info.parent : null;
+    // דלג על רמת המבנה העליונה (level<=1)
+    if (gp && tree[gp] && tree[gp].level <= 1) gp = null;
+    const key = gp || '·';   // '·' = ללא ערסל-על
+    (top[key] = top[key] || {})[k] = byParent[k];
+  });
+
+  const cntOf = o => Object.values(o).reduce((s, a) => s + a.length, 0);
+  const topKeys = Object.keys(top).sort((a, b) => {
+    const fa = Object.values(top[a]).flat().map(x=>x._s).filter(Boolean).sort()[0] || '';
+    const fb = Object.values(top[b]).flat().map(x=>x._s).filter(Boolean).sort()[0] || '';
     return fa.localeCompare(fb);
   });
-  // ברירת מחדל: הראשונה פתוחה
-  if (!Object.keys(_schedOpen).length && gKeys.length) _schedOpen[gKeys[0]] = true;
+  if (!Object.keys(_schedOpen).length && topKeys.length) _schedOpen[topKeys[0]] = true;
 
-  const cards = gKeys.length ? gKeys.map(k => {
-    const g = groups[k], open = !!_schedOpen[k];
-    const nLate = g.filter(x => x._late).length;
-    const nProg = g.filter(x => x.status === 'in_progress').length;
-    const dates = g.map(x => x._s).filter(Boolean).sort();
-    const ends  = g.map(x => x._e).filter(Boolean).sort();
-    const span = dates.length ? `${mspFmt(dates[0])} → ${mspFmt(ends[ends.length-1])}` : '';
+  const subBlock = (k, arr) => {
+    const open = !!_schedOpen['s:' + k];
+    const nLate = arr.filter(x => x._late).length;
+    const nProg = arr.filter(x => x.status === 'in_progress').length;
+    return `
+    <div style="border-top:1px solid var(--bd)">
+      <div onclick="schedToggle('s:${k.replace(/'/g, "\\'")}')"
+           style="display:flex;align-items:center;gap:8px;padding:9px 14px 9px 28px;cursor:pointer;user-select:none">
+        <span style="font-size:11px;display:inline-block;transform:rotate(${open?'90':'0'}deg)">▶</span>
+        <span style="font-weight:600;font-size:14px">${k}</span>
+        <span style="background:var(--bg2);padding:1px 8px;border-radius:10px;font-size:11px">${arr.length}</span>
+        ${nProg ? `<span style="color:var(--bl);font-size:11px">● ${nProg} בביצוע</span>` : ''}
+        ${nLate ? `<span style="color:var(--rd);font-size:11px">⚠️ ${nLate}</span>` : ''}
+      </div>
+      <div style="display:${open?'flex':'none'};flex-direction:column;gap:8px;padding:${open?'4px 14px 12px':'0'}">
+        ${arr.map(t => schedCard(t)).join('')}
+      </div>
+    </div>`;
+  };
+
+  const cards = topKeys.length ? topKeys.map(tk => {
+    const subs = top[tk], open = !!_schedOpen[tk], n = cntOf(subs);
+    const flat = Object.values(subs).flat();
+    const nLate = flat.filter(x => x._late).length;
+    const nProg = flat.filter(x => x.status === 'in_progress').length;
+    const subKeys = Object.keys(subs).sort((a,b)=>{
+      const fa=subs[a].map(x=>x._s).filter(Boolean).sort()[0]||'';
+      const fb=subs[b].map(x=>x._s).filter(Boolean).sort()[0]||'';
+      return fa.localeCompare(fb);
+    });
+    // אם אין ערסל-על — הצג את הערסלים ישירות
+    if (tk === '·') return subKeys.map(k => `
+      <div style="border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--sf)">
+        ${subBlock(k, subs[k]).replace('border-top:1px solid var(--bd)','')}
+      </div>`).join('');
     return `
     <div style="border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--sf)">
-      <div onclick="schedToggle('${k.replace(/'/g,"\\'")}')"
+      <div onclick="schedToggle('${tk.replace(/'/g, "\\'")}')"
            style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:var(--bg2);user-select:none">
-        <span style="font-size:13px;transition:.2s;display:inline-block;transform:rotate(${open?'90':'0'}deg)">▶</span>
-        <span style="font-weight:700;font-size:15px;color:var(--brand-gold)">📍 ${k}</span>
-        <span style="background:var(--sf);padding:1px 9px;border-radius:10px;font-size:12px">${g.length}</span>
+        <span style="font-size:13px;display:inline-block;transform:rotate(${open?'90':'0'}deg)">▶</span>
+        <span style="font-weight:700;font-size:15px;color:var(--brand-gold)">📍 ${tk}</span>
+        <span style="background:var(--sf);padding:1px 9px;border-radius:10px;font-size:12px">${n}</span>
         ${nProg ? `<span style="background:rgba(80,140,220,.18);color:var(--bl);padding:1px 8px;border-radius:10px;font-size:11px">${nProg} בביצוע</span>` : ''}
         ${nLate ? `<span style="background:rgba(200,60,60,.18);color:var(--rd);padding:1px 8px;border-radius:10px;font-size:11px">⚠️ ${nLate}</span>` : ''}
-        <span style="margin-inline-start:auto;font-size:11px;color:var(--tx3)">${span}</span>
       </div>
-      <div style="display:${open?'flex':'none'};flex-direction:column;gap:8px;padding:${open?'10px':'0'}">
-        ${g.map(t => schedCard(t)).join('')}
+      <div style="display:${open?'block':'none'}">
+        ${subKeys.map(k => subBlock(k, subs[k])).join('')}
       </div>
     </div>`;
   }).join('') :
@@ -3273,7 +3335,9 @@ function schedToggle(k){ _schedOpen[k]=!_schedOpen[k]; renderSchedScreen(); }
 function schedExpandAll(v){
   const all=window.mspTasks||[];
   _schedOpen={};
-  if(v){ all.forEach(t=>{ if(t.parent) _schedOpen[t.parent]=true; }); _schedOpen['— ללא מיקום']=true; }
+  if(v){ all.forEach(t=>{ if(t.parent){ _schedOpen[t.parent]=true; _schedOpen['s:'+t.parent]=true; } });
+         const tr=schedBuildTree(all); Object.keys(tr).forEach(k=>{ if(tr[k].parent) _schedOpen[tr[k].parent]=true; });
+         _schedOpen['— ללא מיקום']=true; _schedOpen['s:— ללא מיקום']=true; }
   else { _schedOpen={_none:1}; }
   renderSchedScreen();
 }
