@@ -2344,6 +2344,39 @@ async function openDashboard(){
     };
   });
 
+  // ── v25: משימות והזמנות לפי שבוע ──
+  const _d0=new Date(); const _dow=_d0.getDay();
+  const _sunNow=new Date(_d0); _sunNow.setDate(_d0.getDate()-_dow); _sunNow.setHours(0,0,0,0);
+  const _satNow=new Date(_sunNow); _satNow.setDate(_sunNow.getDate()+6);
+  const _sunNext=new Date(_sunNow); _sunNext.setDate(_sunNow.getDate()+7);
+  const _satNext=new Date(_sunNext); _satNext.setDate(_sunNext.getDate()+6);
+  const _iso=d=>d.toISOString().slice(0,10);
+  const W_NOW=[_iso(_sunNow),_iso(_satNow)], W_NEXT=[_iso(_sunNext),_iso(_satNext)];
+  const inRange=(s,e,r)=>{ if(!s&&!e)return false; const a=s||e,b=e||s; return a<=r[1]&&b>=r[0]; };
+
+  let mspNow=0,mspNext=0,ordNow=0,ordNext=0,ordLate=0,ordWeek=0;
+  projects.forEach(p=>{
+    const mt=(p.data||{}).mspTasks||[];
+    mt.forEach(t=>{
+      const s=t.start||t.bl_start, e=t.end||t.bl_end;
+      if(t.status!=='done'){
+        if(inRange(s,e,W_NOW))mspNow++;
+        if(inRange(s,e,W_NEXT))mspNext++;
+      }
+      (t.orders||[]).forEach(o=>{
+        if(o.status==='סופק')return;
+        const dl=o.deadline; if(!dl)return;
+        if(inRange(dl,dl,W_NOW))ordNow++;
+        if(inRange(dl,dl,W_NEXT))ordNext++;
+        const today=_iso(new Date());
+        if(o.status!=='הוזמן'){
+          if(dl<today)ordLate++;
+          else{ const dd=Math.round((new Date(dl)-new Date(today))/864e5); if(dd<=7)ordWeek++; }
+        }
+      });
+    });
+  });
+
   const tot={
     projects:rows.length,
     open:rows.reduce((s,r)=>s+r.open,0),
@@ -2367,6 +2400,11 @@ async function openDashboard(){
     return {when:dt.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'})+' '+dt.toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'}),
             who:s.full_name||s.email||'—',contractor:m.contractor||'—',proj:m.project_id||'—'};
   });
+
+  const kpiWeek=(label,val,sub,color)=>`<div style="flex:1;min-width:120px;background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:14px 10px;text-align:center">
+    <div style="font-size:28px;font-weight:700;color:${color||'var(--bl)'};line-height:1.1">${val}</div>
+    <div style="font-size:11px;color:var(--tx3);margin-top:4px">${label}</div>
+    ${sub?`<div style="font-size:10px;color:var(--tx3);opacity:.7;margin-top:2px">${sub}</div>`:''}</div>`;
 
   const kpi=(label,val,color)=>`<div style="flex:1;min-width:96px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rl);padding:11px 8px;text-align:center">
     <div style="font-size:22px;font-weight:700;color:${color||'var(--bl)'};line-height:1.15">${val}</div>
@@ -2545,6 +2583,10 @@ function hideDashScreen(){
 async function openProjectFromDash(pid){
   const ok=await loadFromCloud(pid);
   if(!ok){alert('שגיאה בטעינת הפרויקט');return;}
+  // v25: תמיד פותח בלוח שבועי של השבוע הנוכחי
+  try{
+    (buildings||[]).forEach(b=>{ b.activeInnerTab='weekly'; b.activeDailyWeek='current'; b.calWeek='current'; });
+  }catch(e){}
   hideDashScreen();
   renderAll();
 }
@@ -2682,6 +2724,23 @@ async function renderDashScreen(){
       <div style="margin-bottom:18px">
         <div style="font-size:22px;font-weight:700">שלום, ${esc((currentProfile&&currentProfile.full_name)||'')}</div>
         <div style="font-size:13px;color:var(--tx3);margin-top:2px">סקירת כלל הפרויקטים · ${new Date().toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'})}</div>
+      </div>
+
+      ${(ordLate+ordWeek)?`
+      <div onclick="dashOpenOrders()" style="background:rgba(230,126,34,.15);border:1px solid #E67E22;border-radius:var(--rl);padding:12px 16px;margin-bottom:16px;cursor:pointer;display:flex;align-items:center;gap:12px">
+        <span style="font-size:22px">⏰</span>
+        <div style="flex:1">
+          <div style="font-weight:700;color:#E67E22;font-size:15px">${ordLate+ordWeek} הזמנות דורשות טיפול</div>
+          <div style="font-size:12px;color:var(--tx3)">${ordLate?`🔴 ${ordLate} באיחור`:''}${ordLate&&ordWeek?' · ':''}${ordWeek?`🟠 ${ordWeek} השבוע`:''}</div>
+        </div>
+        <span style="font-size:18px;color:#E67E22">←</span>
+      </div>`:''}
+
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px">
+        ${kpiWeek('📅 משימות לו״ז','${mspNow}','שבוע נוכחי','var(--bl)').replace('${mspNow}',mspNow)}
+        ${kpiWeek('📅 משימות לו״ז','${mspNext}','שבוע הבא','var(--bl)').replace('${mspNext}',mspNext)}
+        ${kpiWeek('📦 הזמנות','${ordNow}','שבוע נוכחי',ordNow?'#E67E22':'var(--tx3)').replace('${ordNow}',ordNow)}
+        ${kpiWeek('📦 הזמנות','${ordNext}','שבוע הבא',ordNext?'var(--am)':'var(--tx3)').replace('${ordNext}',ordNext)}
       </div>
 
       <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px">
@@ -3142,6 +3201,11 @@ function openSchedScreen() {
   renderSchedScreen();
 }
 
+function dashOpenOrders(){
+  const ps=(window.mspTasks||[]).length;
+  if(!ps){ alert('פתח פרויקט עם לוח זמנים כדי לראות הזמנות.'); return; }
+  if(typeof ordCenter==='function') ordCenter();
+}
 function closeSchedScreen() {
   const scr = document.getElementById('sched-screen'); if (scr) scr.style.display = 'none';
   const mc = document.getElementById('main-content'); if (mc) mc.style.display = '';
