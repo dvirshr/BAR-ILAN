@@ -2737,10 +2737,10 @@ async function renderDashScreen(){
       </div>`:''}
 
       <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px">
-        ${kpiWeek('📅 משימות לו״ז','${mspNow}','שבוע נוכחי','var(--bl)').replace('${mspNow}',mspNow)}
-        ${kpiWeek('📅 משימות לו״ז','${mspNext}','שבוע הבא','var(--bl)').replace('${mspNext}',mspNext)}
-        ${kpiWeek('📦 הזמנות','${ordNow}','שבוע נוכחי',ordNow?'#E67E22':'var(--tx3)').replace('${ordNow}',ordNow)}
-        ${kpiWeek('📦 הזמנות','${ordNext}','שבוע הבא',ordNext?'var(--am)':'var(--tx3)').replace('${ordNext}',ordNext)}
+        ${kpiWeek('📅 משימות לו״ז',mspNow,'שבוע נוכחי','var(--bl)')}
+        ${kpiWeek('📅 משימות לו״ז',mspNext,'שבוע הבא','var(--bl)')}
+        ${kpiWeek('📦 הזמנות',ordNow,'שבוע נוכחי',ordNow?'#E67E22':'var(--tx3)')}
+        ${kpiWeek('📦 הזמנות',ordNext,'שבוע הבא',ordNext?'var(--am)':'var(--tx3)')}
       </div>
 
       <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px">
