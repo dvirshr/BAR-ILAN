@@ -3276,7 +3276,10 @@ function renderSchedScreen() {
         <h2 style="margin:0;font-size:20px">📅 לוח זמנים</h2>
         <div style="font-size:12px;color:var(--tx3);margin-top:2px">${exec.length} משימות ביצוע · מתוך ${all.length} בלו"ז · baseline נעול 🔒</div>
       </div>
-      <button class="btn" onclick="closeSchedScreen()">✕ סגור</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="ordCenter()">📦 הזמנות</button>
+        <button class="btn" onclick="closeSchedScreen()">✕ סגור</button>
+      </div>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
       ${chip('window', '📆 חלון עבודה', cW, _schedFilter === 'window')}
@@ -3288,6 +3291,15 @@ function renderSchedScreen() {
           ${[1,2,3].map(m => `<option value="${m}" ${m == _schedMonths ? 'selected' : ''}>${m}</option>`).join('')}
         </select>` : ''}
     </div>
+    ${(typeof ordAtRisk==='function' && ordAtRisk().length) ? `
+    <div onclick="ordCenter()" style="background:rgba(230,126,34,.15);border:1px solid #E67E22;border-radius:10px;padding:10px 14px;margin-bottom:12px;cursor:pointer;display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">⏰</span>
+      <div style="flex:1">
+        <div style="font-weight:700;color:#E67E22">${ordAtRisk().length} הזמנות דורשות טיפול</div>
+        <div style="font-size:12px;color:var(--tx3)">לחץ לצפייה בריכוז ההזמנות</div>
+      </div>
+      <span style="font-size:18px">←</span>
+    </div>` : ''}
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <button class="btn btn-sm" onclick="schedExpandAll(1)">⊞ פתח הכל</button>
       <button class="btn btn-sm" onclick="schedExpandAll(0)">⊟ סגור הכל</button>
@@ -3344,7 +3356,10 @@ function schedExpandAll(v){
 function schedSetFilter(f) { _schedFilter = f; renderSchedScreen(); }
 function schedSetMonths(m) { _schedMonths = parseInt(m, 10); renderSchedScreen(); }
 
-
+// placeholder — יחובר ב-v23c (מסך פירוק)
+function schedBreakdown(id) {
+  alert('מסך פירוק המשימה — ייבנה בשלב הבא (v23c).\nמשימה #' + id);
+}
 
 </script>
 <script id="bd-module">
@@ -3520,6 +3535,7 @@ function bdRender(id) {
       </div>` : ''}
 
       <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+        <button class="btn" onclick="ordRender('${id}')">📦 הזמנות${(t.orders||[]).length ? ' ('+t.orders.length+')' : ''}</button>
         <button class="btn" onclick="closeModal()">סגור</button>
         <button class="btn" style="background:var(--brand-gold);color:#fff;border-color:var(--brand-gold);font-weight:600"
                 onclick="bdSave('${id}')">💾 שמור</button>
@@ -3575,6 +3591,262 @@ function bdSave(id) {
   closeModal();
   if (typeof renderSchedScreen === 'function') renderSchedScreen();
   if (typeof toast === 'function') toast('✓ נשמר');
+}
+
+</script>
+<script id="ord-module">
+/* ═══════════════════════════════════════════════════════════════
+   YBNIR v24b · הזמנות חומרים
+   ─────────────────────────────────────────────────────────────
+   • חישוב אחורה: תאריך ביצוע − זמן אספקה − ביטחון = דדליין הזמנה
+   • התראות לפי דחיפות (לא כפוף לחלון העבודה!)
+   • מרוכז תחת "ארגון אתר" + מוצג בתוך המשימה
+   ═══════════════════════════════════════════════════════════════ */
+
+// ---------- זמני אספקה (ימי עבודה) ----------
+const ORD_LEAD = {
+  'ברזל':            10,
+  'בטון':             3,
+  'בטון — יציקה מיוחדת': 30,
+  'אלומיניום':       22,
+  'דלתות':           22,
+  'מעליות':           0,   // פתוח — מנה"ע ממלא
+  'גבס':              7,
+  'ריצוף/חיפוי':     15,
+  'מסגרות':          20,
+  'אחר':              0
+};
+const ORD_SAFETY = 3;   // ימי ביטחון
+
+// זיהוי סוג חומר + האם יציקה מיוחדת
+function ordGuessMaterial(taskName, parentName) {
+  const n = (taskName || '') + ' ' + (parentName || '');
+  if (/רפסוד/.test(n)) return 'בטון — יציקה מיוחדת';
+  if (/תקרה/.test(n) && /מרתף|חניון|מפלס -/.test(n)) return 'בטון — יציקה מיוחדת';
+  if (/יציק|בטון|תקרה|עמוד|קיר|גרעין/.test(n)) return 'בטון';
+  if (/ברזל|זיון/.test(n)) return 'ברזל';
+  if (/אלומיניום|חלונות|ויטרינ/.test(n)) return 'אלומיניום';
+  if (/דלת/.test(n)) return 'דלתות';
+  if (/מעלי/.test(n)) return 'מעליות';
+  if (/גבס|מחיצ/.test(n)) return 'גבס';
+  if (/ריצוף|חיפוי/.test(n)) return 'ריצוף/חיפוי';
+  if (/מסגר|מעקה/.test(n)) return 'מסגרות';
+  return 'אחר';
+}
+
+// חישוב אחורה בימי עבודה
+function ordSubWorkDays(iso, n) {
+  if (!iso) return null;
+  const d = new Date(iso + 'T00:00:00');
+  let done = 0;
+  while (done < n) {
+    d.setDate(d.getDate() - 1);
+    const dow = d.getDay();
+    if (dow !== 5 && dow !== 6) done++;
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+function ordDeadline(needDate, leadDays) {
+  if (!needDate) return null;
+  return ordSubWorkDays(needDate, (+leadDays || 0) + ORD_SAFETY);
+}
+
+// דחיפות
+function ordUrgency(o) {
+  if (o.status === 'סופק') return { k: 'done', c: 'var(--gr)', t: '✓ סופק' };
+  if (!o.deadline) return { k: 'none', c: 'var(--tx3)', t: '—' };
+  const today = mspToday();
+  const dl = o.deadline;
+  const days = mspDaysBetween(today, dl);
+  if (o.status === 'הוזמן') return { k: 'ordered', c: 'var(--bl)', t: '📦 הוזמן' };
+  if (days < 0)  return { k: 'late',  c: 'var(--rd)', t: `🔴 באיחור ${-days}י` };
+  if (days <= 7) return { k: 'week',  c: '#E67E22',   t: `🟠 תוך ${days}י` };
+  if (days <= 30) return { k: 'month', c: 'var(--am)', t: `🟡 ${days}י` };
+  return { k: 'ok', c: 'var(--gr)', t: `🟢 ${days}י` };
+}
+
+// כל ההזמנות מכל המשימות
+function ordAll() {
+  const out = [];
+  (window.mspTasks || []).forEach(t => {
+    (t.orders || []).forEach((o, i) => out.push(Object.assign({}, o, {
+      _taskId: t.id, _taskName: t.name, _parent: t.parent, _idx: i
+    })));
+  });
+  return out;
+}
+
+function ordAtRisk() {
+  return ordAll().filter(o => ['late', 'week'].includes(ordUrgency(o).k));
+}
+
+// ---------- הוספת הזמנה למשימה ----------
+function ordAdd(taskId) {
+  const t = bdFind(taskId);
+  if (!t) return;
+  t.orders = t.orders || [];
+  const mat = ordGuessMaterial(t.name, t.parent);
+  const need = t.start || t.bl_start;
+  t.orders.push({
+    material: mat, qty: '', supplier: '',
+    lead: ORD_LEAD[mat] || 0,
+    needDate: need,
+    deadline: ordDeadline(need, ORD_LEAD[mat] || 0),
+    status: 'טרם', orderNo: '', note: ''
+  });
+  ordRender(taskId);
+}
+
+function ordSet(taskId, i, field, val) {
+  const t = bdFind(taskId), o = t.orders[i];
+  if (!o) return;
+  o[field] = (field === 'lead') ? (+val || 0) : val;
+  if (field === 'material') o.lead = ORD_LEAD[val] != null ? ORD_LEAD[val] : o.lead;
+  if (['material', 'lead', 'needDate'].includes(field))
+    o.deadline = ordDeadline(o.needDate, o.lead);
+  ordRender(taskId);
+}
+
+function ordDel(taskId, i) {
+  const t = bdFind(taskId);
+  t.orders.splice(i, 1);
+  ordRender(taskId);
+}
+
+function ordSave(taskId) {
+  const t = bdFind(taskId);
+  t.orders = (t.orders || []).filter(o => o.material);
+  if (typeof saveAll === 'function') saveAll();
+  if (typeof scheduleCloudSave === 'function') scheduleCloudSave();
+  closeModal();
+  if (typeof renderSchedScreen === 'function') renderSchedScreen();
+  if (typeof toast === 'function') toast('✓ הזמנות נשמרו');
+}
+
+// ---------- מסך הזמנות של משימה ----------
+function ordRender(taskId) {
+  const t = bdFind(taskId);
+  const orders = t.orders || [];
+  const rows = orders.length ? orders.map((o, i) => {
+    const u = ordUrgency(o);
+    return `
+    <tr style="border-bottom:1px solid var(--bd)">
+      <td style="padding:6px 4px">
+        <select onchange="ordSet('${taskId}',${i},'material',this.value)"
+                style="background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:3px">
+          ${Object.keys(ORD_LEAD).map(m => `<option ${o.material === m ? 'selected' : ''}>${m}</option>`).join('')}
+        </select>
+      </td>
+      <td style="padding:6px 4px"><input value="${o.qty||''}" placeholder="כמות" onchange="ordSet('${taskId}',${i},'qty',this.value)"
+          style="width:62px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:2px 5px"></td>
+      <td style="padding:6px 4px"><input value="${o.supplier||''}" placeholder="ספק" onchange="ordSet('${taskId}',${i},'supplier',this.value)"
+          style="width:88px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:2px 5px"></td>
+      <td style="padding:6px 4px;text-align:center"><input type="number" min="0" value="${o.lead||0}" onchange="ordSet('${taskId}',${i},'lead',this.value)"
+          style="width:46px;background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:2px;text-align:center"></td>
+      <td style="padding:6px 4px;font-size:11px;color:var(--tx3);white-space:nowrap">${mspFmt(o.needDate)}</td>
+      <td style="padding:6px 4px;white-space:nowrap"><strong style="color:${u.c};font-size:12px">${mspFmt(o.deadline)}</strong></td>
+      <td style="padding:6px 4px;text-align:center"><span style="color:${u.c};font-size:11px;font-weight:600">${u.t}</span></td>
+      <td style="padding:6px 4px">
+        <select onchange="ordSet('${taskId}',${i},'status',this.value)"
+                style="background:var(--bg2);border:1px solid var(--bd);border-radius:4px;color:var(--tx);font-size:12px;padding:3px">
+          ${['טרם','הוזמן','סופק'].map(s => `<option ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td style="padding:6px 2px;text-align:center">
+        <button onclick="ordDel('${taskId}',${i})" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:15px">🗑</button>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="9" style="padding:24px;text-align:center;color:var(--tx3)">אין הזמנות. לחץ "➕ הזמנה".</td></tr>`;
+
+  document.getElementById('modal-root').innerHTML = `
+  <div class="modal-overlay" onclick="if(this===event.target)closeModal()">
+    <div class="modal" style="max-width:960px;max-height:92vh;overflow-y:auto">
+      <div style="border-bottom:1px solid var(--bd);padding-bottom:10px;margin-bottom:12px">
+        <div style="font-size:17px;font-weight:700">📦 הזמנות — ${t.name}</div>
+        <div style="font-size:12px;color:var(--brand-gold);margin-top:2px">📍 ${t.parent || '—'} · נדרש ל-${mspFmt(t.start || t.bl_start)}</div>
+      </div>
+      <div style="background:var(--bg2);padding:8px 12px;border-radius:8px;margin-bottom:10px;font-size:12px;color:var(--tx3)">
+        💡 דדליין = תאריך נדרש − זמן אספקה − ${ORD_SAFETY} ימי ביטחון (בימי עבודה)
+      </div>
+      <button class="btn btn-sm" onclick="ordAdd('${taskId}')" style="margin-bottom:10px">➕ הזמנה</button>
+      <div style="overflow-x:auto;border:1px solid var(--bd);border-radius:8px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead style="background:var(--bg2)"><tr>
+            <th style="padding:7px 4px;font-size:12px">חומר</th>
+            <th style="padding:7px 4px;font-size:12px">כמות</th>
+            <th style="padding:7px 4px;font-size:12px">ספק</th>
+            <th style="padding:7px 4px;font-size:12px">אספקה</th>
+            <th style="padding:7px 4px;font-size:12px">נדרש ל-</th>
+            <th style="padding:7px 4px;font-size:12px">⏰ להזמין עד</th>
+            <th style="padding:7px 4px;font-size:12px">מצב</th>
+            <th style="padding:7px 4px;font-size:12px">סטטוס</th>
+            <th style="padding:7px 2px"></th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+        <button class="btn" onclick="schedBreakdown('${taskId}')">← חזרה לפירוק</button>
+        <button class="btn" style="background:var(--brand-gold);color:#fff;border-color:var(--brand-gold);font-weight:600"
+                onclick="ordSave('${taskId}')">💾 שמור</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---------- מסך ריכוז כל ההזמנות ----------
+function ordCenter() {
+  const all = ordAll().map(o => Object.assign({}, o, { _u: ordUrgency(o) }));
+  const rank = { late: 0, week: 1, month: 2, ok: 3, ordered: 4, done: 5, none: 6 };
+  all.sort((a, b) => (rank[a._u.k] - rank[b._u.k]) || (a.deadline || '').localeCompare(b.deadline || ''));
+  const cnt = k => all.filter(o => o._u.k === k).length;
+
+  const rows = all.length ? all.map(o => `
+    <tr style="border-bottom:1px solid var(--bd);cursor:pointer" onclick="ordRender('${o._taskId}')">
+      <td style="padding:7px 5px"><span style="color:${o._u.c};font-weight:600;font-size:12px">${o._u.t}</span></td>
+      <td style="padding:7px 5px;font-weight:600;font-size:13px">${o.material}</td>
+      <td style="padding:7px 5px;font-size:12px">${o.qty || '—'}</td>
+      <td style="padding:7px 5px;font-size:12px">${o.supplier || '—'}</td>
+      <td style="padding:7px 5px;white-space:nowrap"><strong style="color:${o._u.c};font-size:12px">${mspFmt(o.deadline)}</strong></td>
+      <td style="padding:7px 5px;font-size:12px;color:var(--tx3)">${mspFmt(o.needDate)}</td>
+      <td style="padding:7px 5px;font-size:12px">${o._taskName}<div style="font-size:11px;color:var(--brand-gold)">📍 ${o._parent || '—'}</div></td>
+      <td style="padding:7px 5px;font-size:12px">${o.status}</td>
+    </tr>`).join('') :
+    `<tr><td colspan="8" style="padding:34px;text-align:center;color:var(--tx3)">אין הזמנות רשומות.<br><span style="font-size:12px">הוסף הזמנות דרך 📅 לו"ז ← משימה ← 📦 הזמנות</span></td></tr>`;
+
+  document.getElementById('modal-root').innerHTML = `
+  <div class="modal-overlay" onclick="if(this===event.target)closeModal()">
+    <div class="modal" style="max-width:1000px;max-height:92vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd);padding-bottom:10px;margin-bottom:12px">
+        <div style="font-size:17px;font-weight:700">📦 ריכוז הזמנות · ארגון אתר</div>
+        <button class="btn btn-sm" onclick="closeModal()">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+        ${[['🔴 באיחור', cnt('late'), 'var(--rd)'], ['🟠 השבוע', cnt('week'), '#E67E22'],
+           ['📦 הוזמן', cnt('ordered'), 'var(--bl)'], ['✓ סופק', cnt('done'), 'var(--gr)']]
+          .map(([l, v, c]) => `<div style="background:var(--bg2);padding:9px;border-radius:8px;text-align:center">
+            <div style="font-size:20px;font-weight:700;color:${c}">${v}</div>
+            <div style="font-size:11px;color:var(--tx3)">${l}</div></div>`).join('')}
+      </div>
+      <div style="overflow-x:auto;border:1px solid var(--bd);border-radius:8px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead style="background:var(--bg2)"><tr>
+            <th style="padding:7px 5px;font-size:12px">מצב</th>
+            <th style="padding:7px 5px;font-size:12px">חומר</th>
+            <th style="padding:7px 5px;font-size:12px">כמות</th>
+            <th style="padding:7px 5px;font-size:12px">ספק</th>
+            <th style="padding:7px 5px;font-size:12px">⏰ להזמין עד</th>
+            <th style="padding:7px 5px;font-size:12px">נדרש ל-</th>
+            <th style="padding:7px 5px;text-align:right;font-size:12px">משימה</th>
+            <th style="padding:7px 5px;font-size:12px">סטטוס</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:8px">💡 לחיצה על שורה פותחת את ההזמנות של המשימה</div>
+    </div>
+  </div>`;
 }
 
 </script>
