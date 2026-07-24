@@ -23,6 +23,7 @@ body.on-dash .proj-inp,body.on-dash .itabs,body.on-dash .sum-tab{display:none!im
 body.on-dash #hdr-proj-name{display:none}
 #dash-screen{padding:0;margin:0}
 body.on-dash #btn-msp,body.on-dash #btn-sched{display:none!important}
+body.no-msp-import #btn-msp{display:none!important}
 
 
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
@@ -473,6 +474,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
     <input id="au-pass" type="password" placeholder="סיסמה" autocomplete="current-password" style="width:100%;padding:11px 12px;margin-bottom:16px;background:#2E2E2E;border:1px solid #4A4A4A;border-radius:8px;color:#F0F0F0;font-family:inherit;font-size:14px"/>
 
     <button id="au-submit" onclick="authSubmit()" style="width:100%;padding:12px;background:#C8963C;border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:15px">כניסה</button>
+
+    <div id="forgot-link" style="text-align:center;margin-top:12px">
+      <a href="#" onclick="authForgot();return false" style="color:#C8963C;font-size:13px;text-decoration:none">שכחתי סיסמה</a>
+    </div>
 
     <div style="text-align:center;margin-top:16px;font-size:11px;color:#666">גישה מאובטחת · הנתונים מוגנים ברמת השרת</div>
   </div>
@@ -1957,6 +1962,67 @@ function authErr(msg){const e=document.getElementById('auth-error');e.textConten
 function authInfo(msg){const e=document.getElementById('auth-info');e.textContent=msg;e.style.display='block';document.getElementById('auth-error').style.display='none';}
 function authClearMsg(){document.getElementById('auth-error').style.display='none';document.getElementById('auth-info').style.display='none';}
 
+// ── v26: שכחתי סיסמה ──
+async function authForgot(){
+  const email=(document.getElementById('au-email').value||'').trim();
+  if(!email){ authErr('הזן את כתובת האימייל שלך בשדה למעלה, ואז לחץ "שכחתי סיסמה"'); return; }
+  const lnk=document.getElementById('forgot-link');
+  const orig=lnk.innerHTML; lnk.innerHTML='<span style="color:#888;font-size:13px">שולח…</span>';
+  try{
+    const redirectTo=location.origin+location.pathname+'#reset';
+    const {error}=await sbClient.auth.resetPasswordForEmail(email,{redirectTo});
+    if(error)throw error;
+    authInfo('נשלח מייל לאיפוס סיסמה אל '+email+'. בדוק גם בתיקיית ספאם.');
+  }catch(e){
+    const m=(e&&e.message)||'שגיאה';
+    if(/rate limit|too many/i.test(m)) authErr('נשלחו יותר מדי בקשות. נסה שוב בעוד כשעה.');
+    else authErr(m);
+  }
+  lnk.innerHTML=orig;
+}
+
+// מסך החלפת סיסמה (אחרי לחיצה על הקישור במייל)
+function authShowReset(){
+  const box=document.querySelector('#auth-gate > div');
+  if(!box)return;
+  box.innerHTML=`
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:20px;font-weight:700;color:#F0F0F0">בחירת <span style="color:#C8963C">סיסמה חדשה</span></div>
+      <div style="font-size:12px;color:#888;margin-top:4px">YBNIR · ניהול אתרי בנייה</div>
+    </div>
+    <div id="auth-error" style="display:none;background:#FAECE7;color:#993C1D;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
+    <div id="auth-info" style="display:none;background:#EAF3DE;color:#3B6D11;padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
+    <input id="rs-pass" type="password" placeholder="סיסמה חדשה (6 תווים לפחות)" autocomplete="new-password"
+           style="width:100%;padding:11px 12px;margin-bottom:10px;background:#2E2E2E;border:1px solid #4A4A4A;border-radius:8px;color:#F0F0F0;font-family:inherit;font-size:14px"/>
+    <input id="rs-pass2" type="password" placeholder="אימות סיסמה" autocomplete="new-password"
+           style="width:100%;padding:11px 12px;margin-bottom:16px;background:#2E2E2E;border:1px solid #4A4A4A;border-radius:8px;color:#F0F0F0;font-family:inherit;font-size:14px"/>
+    <button id="rs-submit" onclick="authDoReset()"
+            style="width:100%;padding:12px;background:#C8963C;border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-family:inherit;font-size:15px">עדכן סיסמה</button>`;
+  ['rs-pass','rs-pass2'].forEach(id=>{const el=document.getElementById(id);
+    if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')authDoReset();});});
+}
+
+async function authDoReset(){
+  const p1=document.getElementById('rs-pass').value, p2=document.getElementById('rs-pass2').value;
+  if(!p1||p1.length<6){authErr('הסיסמה חייבת להכיל 6 תווים לפחות');return;}
+  if(p1!==p2){authErr('הסיסמאות אינן תואמות');return;}
+  const btn=document.getElementById('rs-submit'); btn.disabled=true; const o=btn.textContent; btn.textContent='...';
+  try{
+    const {error}=await sbClient.auth.updateUser({password:p1});
+    if(error)throw error;
+    authInfo('הסיסמה עודכנה! מעביר אותך למערכת…');
+    history.replaceState(null,'',location.pathname);
+    setTimeout(async()=>{
+      const {data}=await sbClient.auth.getUser();
+      if(data&&data.user) await onAuthenticated(data.user);
+      else location.reload();
+    },1200);
+  }catch(e){
+    authErr((e&&e.message)||'שגיאה בעדכון הסיסמה');
+    btn.disabled=false; btn.textContent=o;
+  }
+}
+
 async function authSubmit(){
   const email=document.getElementById('au-email').value.trim();
   const pass=document.getElementById('au-pass').value;
@@ -2006,6 +2072,8 @@ async function onAuthenticated(user){
   // passed gate — hide auth, show app
   document.getElementById('auth-gate').style.display='none';
   if(isOwner){['btn-admin','btn-dash','btn-restore'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='';});}
+  // v26: רק owner/מנהל פרויקט מייבא לו"ז
+  document.body.classList.toggle('no-msp-import',!isOwner);
   window._landOnDash=isOwner;
   window.SB_JWT=(await sbClient.auth.getSession()).data.session.access_token;
   await bootApp();
@@ -2020,6 +2088,22 @@ async function authLogout(){
 /* init SDK + restore session */
 async function initAuth(){
   sbClient=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'ybnir-auth-v18'}});
+
+  // v26: זיהוי חזרה מקישור איפוס סיסמה
+  const hash=location.hash||'';
+  const isReset = hash.indexOf('type=recovery')>-1 || hash.indexOf('#reset')===0;
+  if(isReset){
+    document.getElementById('auth-gate').style.display='flex';
+    // Supabase מזריק session מה-hash — נותנים לו רגע
+    let tries=0;
+    const wait=setInterval(async()=>{
+      tries++;
+      const {data}=await sbClient.auth.getSession();
+      if((data&&data.session)||tries>12){ clearInterval(wait); authShowReset(); }
+    },250);
+    return;
+  }
+
   const {data}=await sbClient.auth.getSession();
   if(data&&data.session){
     await onAuthenticated(data.session.user);
@@ -2104,7 +2188,35 @@ async function togglePerms(projId){
       <div style="display:flex;align-items:center;gap:8px">${badge}${action}</div>
     </div>`;
   }).join('');
-  box.innerHTML=`<div style="font-size:11px;color:var(--tx3);margin-bottom:4px">משתמשים (קבלנים — צפייה בלבד):</div>${rows||'<div style="color:var(--tx3);font-size:12px;padding:8px">אין משתמשים רשומים</div>'}`;
+  // v26: הפרדה — חברים בפרויקט מול משתמשים זמינים
+  const mkRow=p=>{
+    const isMember=memberIds.has(p.id);
+    const m=members.find(x=>x.user_id===p.id);
+    let badge,action;
+    if(isMember){
+      const rl=m.permission==='editor'?'מנהל עבודה':'קבלן (צפייה)';
+      badge='<span style="background:var(--gn-bg);color:var(--gn);padding:2px 8px;border-radius:6px;font-size:11px">'+rl+'</span>';
+      action=`<button class="btn btn-sm" style="color:var(--rd);border-color:var(--rd-b)" onclick="revokeMember('${m.id}','${encodeURIComponent(projId)}')">הסר</button>`;
+    }else{
+      badge=p.status==='pending'?'<span style="background:var(--am-bg);color:var(--am);padding:2px 8px;border-radius:6px;font-size:11px">ממתין לאישור</span>':'';
+      action=`<select id="perm-${p.id}" style="padding:3px 6px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);color:var(--tx);font-family:inherit;font-size:11px">
+        <option value="viewer" style="background:var(--sf);color:var(--tx)">קבלן (צפייה)</option>
+        <option value="editor" style="background:var(--sf);color:var(--tx)">מנהל עבודה</option>
+      </select>
+      <button class="btn btn-sm" style="color:var(--gn);border-color:var(--gn-b)" onclick="approveMember('${p.id}','${encodeURIComponent(projId)}')">${p.status==='pending'?'אשר':'+ הוסף'}</button>`;
+    }
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 4px;border-top:1px solid var(--bd)">
+      <div><div style="font-size:13px;font-weight:500">${esc(p.full_name||p.email)}</div><div style="font-size:10px;color:var(--tx3)">${esc(p.email)}${p.phone?' · '+esc(p.phone):''}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">${badge}${action}</div>
+    </div>`;
+  };
+  const others=allProfiles.filter(p=>p.role!=='owner');
+  const inProj=others.filter(p=>memberIds.has(p.id));
+  const avail=others.filter(p=>!memberIds.has(p.id));
+  box.innerHTML=`
+    <div style="font-size:11px;font-weight:600;color:var(--gn);margin:6px 0 2px">✓ בפרויקט (${inProj.length})</div>
+    ${inProj.length?inProj.map(mkRow).join(''):'<div style="color:var(--tx3);font-size:12px;padding:6px 4px">אין משתמשים משויכים</div>'}
+    ${avail.length?`<div style="font-size:11px;font-weight:600;color:var(--tx3);margin:14px 0 2px">משתמשים זמינים להוספה (${avail.length})</div>${avail.map(mkRow).join('')}`:''}`;
 }
 
 async function approveMember(userId,projIdEnc){
