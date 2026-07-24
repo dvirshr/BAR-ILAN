@@ -203,7 +203,7 @@ body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh
 .hd-cur{background:#3D2E10;border-bottom:1px solid var(--bl-b)}
 .hd-nxt{background:#1A2E10;border-bottom:1px solid var(--gn-b)}
 .wlbl{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
-.lp{color:#C8C6BE}.lc{color:var(--bl)}.ln{color:var(--gn)}
+.lp{color:var(--tx2)}.lc{color:var(--bl)}.ln{color:var(--gn)}
 .wdates{font-size:10px;color:var(--tx3);background:transparent;border:none;outline:none;width:85px;font-family:var(--fn)}
 .wk-body{padding:7px}
 .tr-sec{margin-bottom:5px;border:1px solid var(--bd);border-radius:var(--r);overflow:hidden}
@@ -308,8 +308,8 @@ body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh
 .cal-table td.trade-name-cell{background:var(--s2);font-weight:500;color:var(--tx);padding:6px 8px;position:sticky;right:0;z-index:5;border-color:var(--bd2);vertical-align:middle}
 .cal-table td.trade-name-cell .trade-dot-cal{width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:5px;flex-shrink:0}
 .cal-day-cell{padding:4px 5px;height:100%;min-height:55px;display:flex;flex-direction:column;gap:3px}
-.cal-task{background:#2c2c2e;border:1px solid #48484a;border-radius:4px;padding:3px 6px;font-size:11px;color:#f2f2f7}
-.cal-task span{color:#f2f2f7}
+.cal-task{background:#2c2c2e;border:1px solid #48484a;border-radius:4px;padding:3px 6px;font-size:11px;color:var(--tx)}
+.cal-task span{color:var(--tx)}
 .cal-task .cal-task-loc{color:var(--brand-gold)}
 .cal-task.done{opacity:.55;text-decoration:line-through}
 .cal-task-txt{font-weight:500;margin-bottom:2px;line-height:1.3}
@@ -430,12 +430,12 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .wk-body{background:#242424}
 .tr-sec{background:#2A2A2A}
 .tr-hd-s{background:#333!important}
-.tr-nm{color:#F5F5F5!important;font-weight:600}
-.task-sum-row{color:#EDEDED!important;background:#242424}
+.tr-nm{color:var(--tx)!important;font-weight:600}
+.task-sum-row{color:var(--tx)!important;background:#242424}
 .task-sum-row span{color:inherit}
 .wk-hd .wlbl{font-weight:700}
 .wdates{color:#F0F0F0;background:#1E1E1E;border:1px solid #4A4A4A}
-.wk-notes{color:#EDEDED;background:#1E1E1E;border:1px solid #4A4A4A}
+.wk-notes{color:var(--tx);background:#1E1E1E;border:1px solid #4A4A4A}
 </style>
 <meta name="theme-color" content="#1A1A1A"/>
 <meta name="mobile-web-app-capable" content="yes"/>
@@ -1296,7 +1296,7 @@ function renderWeekly(){
           return`<div class="tr-sec"><div class="tr-hd-s"><span class="tr-nm"><span class="tdot" style="background:${tc(t)}"></span>${esc(t)}</span><span style="font-size:10px;color:var(--tx3)">${d}/${tasks.length}</span></div>
           ${tasks.map(tk=>{const p=tk.pct||0;const cls=p>=100?'p-done':p>0?'p-wip':'p-todo';return`<div class="task-sum-row">
             <span class="pbadge ${cls}">${p>=100?'הושלם':p>0?p+'%':'טרם'}</span>
-            <span style="flex:1;color:${tk.done?'#8e8e93':'#f2f2f7'}${tk.done?';text-decoration:line-through':''}">${esc(tk.text)}</span>
+            <span style="flex:1;color:${tk.done?'var(--tx3)':'var(--tx)'}${tk.done?';text-decoration:line-through':''}">${esc(tk.text)}</span>
             <span style="font-size:9px;color:var(--tx3)">${DAYS[tk.day]}</span>
             ${tk.loc?`<span style="font-size:9px;color:var(--brand-gold);background:rgba(200,150,60,.15);padding:1px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;max-width:100px;text-overflow:ellipsis;border:1px solid rgba(200,150,60,.3)" title="${esc(tk.loc)}">📍${esc(tk.loc)}</span>`:''}
           </div>`;}).join('')}</div>`;}).join('')}
