@@ -1279,9 +1279,9 @@ function renderWeekly(){
   const arch=getArchive();
   inner().innerHTML=`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
-      <span style="font-size:11px;color:#c7c7cc">📚 היסטוריה:</span>
+      <span style="font-size:11px;color:var(--tx3)">📚 היסטוריה:</span>
       <button class="btn btn-sm ${!b.archiveWeek?'btn-blue':''}" onclick="getBld().archiveWeek=null;renderWeekly()">שבוע נוכחי</button>
-      ${arch.length?arch.map((snap,si)=>`<button class="btn btn-sm ${b.archiveWeek===si?'btn-blue':''}" onclick="getBld().archiveWeek=${si};renderWeekly()">${snap.week?new Date(snap.week).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}):('ארכיון '+(si+1))}</button>`).join(''):'<span style="font-size:10px;color:#c7c7cc">אין ארכיון — יווצר בלחיצה על ⏭</span>'}
+      ${arch.length?arch.map((snap,si)=>`<button class="btn btn-sm ${b.archiveWeek===si?'btn-blue':''}" onclick="getBld().archiveWeek=${si};renderWeekly()">${snap.week?new Date(snap.week).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}):('ארכיון '+(si+1))}</button>`).join(''):'<span style="font-size:10px;color:var(--tx3)">אין ארכיון — יווצר בלחיצה על ⏭</span>'}
     </div>
     <div class="wk-notice">📋 תצוגה זו מסכמת משימות שהוזנו בפירוט היומי. להוספה — <a href="#" style="color:var(--bl)" onclick="getBld().activeInnerTab='daily';renderBuilding();return false">עבור לפירוט יומי ↗</a></div>
     <div class="weeks-grid">${WK_CFG.map(w=>{
@@ -1291,13 +1291,13 @@ function renderWeekly(){
         <span class="wlbl ${w.lbl}">${w.label}</span>
         <input class="wdates" placeholder="תאריכים" value="${esc((b.wkDates[w.id]||{}).dates||'')}" onchange="if(!getBld().wkDates)getBld().wkDates={};getBld().wkDates['${w.id}']={dates:this.value}"/>
       </div><div class="wk-body">
-        ${!trades.length?`<div style="font-size:11px;color:#c7c7cc;padding:8px 4px">אין משימות — הזן ביומי</div>`:''}
+        ${!trades.length?`<div style="font-size:11px;color:var(--tx3);padding:8px 4px">אין משימות — הזן ביומי</div>`:''}
         ${trades.map(t=>{const tasks=wd[t];const d=tasks.filter(tk=>tk.done||tk.pct>=100).length;
-          return`<div class="tr-sec"><div class="tr-hd-s"><span class="tr-nm"><span class="tdot" style="background:${tc(t)}"></span>${esc(t)}</span><span style="font-size:10px;color:#c7c7cc">${d}/${tasks.length}</span></div>
+          return`<div class="tr-sec"><div class="tr-hd-s"><span class="tr-nm"><span class="tdot" style="background:${tc(t)}"></span>${esc(t)}</span><span style="font-size:10px;color:var(--tx3)">${d}/${tasks.length}</span></div>
           ${tasks.map(tk=>{const p=tk.pct||0;const cls=p>=100?'p-done':p>0?'p-wip':'p-todo';return`<div class="task-sum-row">
             <span class="pbadge ${cls}">${p>=100?'הושלם':p>0?p+'%':'טרם'}</span>
             <span style="flex:1;color:${tk.done?'#8e8e93':'#f2f2f7'}${tk.done?';text-decoration:line-through':''}">${esc(tk.text)}</span>
-            <span style="font-size:9px;color:#c7c7cc">${DAYS[tk.day]}</span>
+            <span style="font-size:9px;color:var(--tx3)">${DAYS[tk.day]}</span>
             ${tk.loc?`<span style="font-size:9px;color:var(--brand-gold);background:rgba(200,150,60,.15);padding:1px 6px;border-radius:4px;white-space:nowrap;overflow:hidden;max-width:100px;text-overflow:ellipsis;border:1px solid rgba(200,150,60,.3)" title="${esc(tk.loc)}">📍${esc(tk.loc)}</span>`:''}
           </div>`;}).join('')}</div>`;}).join('')}
         <div class="wk-stats-row"><span>${tot} משימות</span><span>${done} הושלמו</span><span>${tot?Math.round(done/tot*100):0}%</span></div>
