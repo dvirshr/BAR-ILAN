@@ -2690,6 +2690,39 @@ async function openProjectFromDash(pid){
 }
 
 /* Gather + render the dashboard */
+// ── v27: גרף השוואה בין פרויקטים ──
+window._dashMetric='activity';
+function dashChart(metric){
+  if(metric) window._dashMetric=metric;
+  const m=window._dashMetric||'activity';
+  const rows=(window._dashRows||[]).slice();
+  const el=document.getElementById('dash-chart');
+  if(!el)return;
+  const LBL={activity:'פעילות כללית',ordOpen:'הזמנות פתוחות',workers:'הקצאות פועלים',msgs30:'הודעות (30 יום)'};
+  rows.sort((a,b)=>(b[m]||0)-(a[m]||0));
+  const max=Math.max(1,...rows.map(r=>r[m]||0));
+  el.innerHTML=`
+    <div style="font-size:11px;color:var(--tx3);margin-bottom:8px">${LBL[m]||m} · 30 ימים אחרונים</div>
+    ${rows.map((r,i)=>{
+      const v=r[m]||0, w=Math.round(v/max*100);
+      const col=i===0?'var(--brand-gold)':'var(--bl-b)';
+      return `<div style="display:flex;align-items:center;gap:9px;margin-bottom:7px">
+        <div style="width:120px;font-size:12px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${i===0&&v>0?'🏆 ':''}${esc(r.name)}</div>
+        <div style="flex:1;background:var(--s2);border-radius:5px;height:20px;overflow:hidden">
+          <div style="width:${w}%;height:100%;background:${col};border-radius:5px;transition:width .3s"></div>
+        </div>
+        <div style="width:38px;font-size:12px;font-weight:600;text-align:center">${v}</div>
+      </div>`;
+    }).join('')}`;
+  // עדכון הצ'יפים
+  document.querySelectorAll('#dash-screen button[onclick^="dashChart"]').forEach(b=>{
+    const k=(b.getAttribute('onclick').match(/'([^']+)'/)||[])[1];
+    const on=k===m;
+    b.style.background=on?'var(--brand-gold)':'var(--s2)';
+    b.style.color=on?'#fff':'var(--tx)';
+  });
+}
+
 async function renderDashScreen(){
   const el=document.getElementById('dash-screen');
   el.innerHTML='<div style="text-align:center;color:var(--tx3);padding:60px;font-size:14px">טוען נתונים...</div>';
@@ -2762,38 +2795,59 @@ async function renderDashScreen(){
     };
   });
 
-  // ── v25: משימות והזמנות לפי שבוע ──
+  // ── v27: חישוב פר-פרויקט ──
   const _d0=new Date(); const _dow=_d0.getDay();
   const _sunNow=new Date(_d0); _sunNow.setDate(_d0.getDate()-_dow); _sunNow.setHours(0,0,0,0);
   const _satNow=new Date(_sunNow); _satNow.setDate(_sunNow.getDate()+6);
   const _sunNext=new Date(_sunNow); _sunNext.setDate(_sunNow.getDate()+7);
   const _satNext=new Date(_sunNext); _satNext.setDate(_sunNext.getDate()+6);
+  const _sunPrev=new Date(_sunNow); _sunPrev.setDate(_sunNow.getDate()-7);
   const _iso=d=>d.toISOString().slice(0,10);
+  const TODAY=_iso(new Date());
   const W_NOW=[_iso(_sunNow),_iso(_satNow)], W_NEXT=[_iso(_sunNext),_iso(_satNext)];
+  const monthAgo=new Date(); monthAgo.setDate(monthAgo.getDate()-30);
+  const MONTH_AGO=_iso(monthAgo);
   const inRange=(s,e,r)=>{ if(!s&&!e)return false; const a=s||e,b=e||s; return a<=r[1]&&b>=r[0]; };
 
-  let mspNow=0,mspNext=0,ordNow=0,ordNext=0,ordLate=0,ordWeek=0;
-  projects.forEach(p=>{
-    const mt=(p.data||{}).mspTasks||[];
+  // מעשיר כל שורה בנתוני לו"ז והזמנות
+  const byId={}; projects.forEach(p=>byId[p.id]=p);
+  rows.forEach(r=>{
+    const p=byId[r.id]||{}; const mt=((p.data||{}).mspTasks)||[];
+    let mNow=0,mNext=0,mLate=0,broken=0,notBroken=0;
+    let oOpen=0,oDone=0,oLate=0,oWeek=0,oMonth=0;
     mt.forEach(t=>{
       const s=t.start||t.bl_start, e=t.end||t.bl_end;
       if(t.status!=='done'){
-        if(inRange(s,e,W_NOW))mspNow++;
-        if(inRange(s,e,W_NEXT))mspNext++;
+        const inNow=inRange(s,e,W_NOW);
+        if(inNow) mNow++;
+        if(inRange(s,e,W_NEXT)) mNext++;
+        if(e && e<TODAY) mLate++;                       // פיגור מול לו"ז מעודכן
+        if(inNow){ if((t.subtasks||[]).length) broken++; else notBroken++; }
       }
       (t.orders||[]).forEach(o=>{
-        if(o.status==='סופק')return;
+        if(o.status==='סופק'){ oDone++; return; }
+        oOpen++;
         const dl=o.deadline; if(!dl)return;
-        if(inRange(dl,dl,W_NOW))ordNow++;
-        if(inRange(dl,dl,W_NEXT))ordNext++;
-        const today=_iso(new Date());
+        if(dl>=MONTH_AGO&&dl<=W_NEXT[1]) oMonth++;
         if(o.status!=='הוזמן'){
-          if(dl<today)ordLate++;
-          else{ const dd=Math.round((new Date(dl)-new Date(today))/864e5); if(dd<=7)ordWeek++; }
+          if(dl<TODAY) oLate++;
+          else if(Math.round((new Date(dl)-new Date(TODAY))/864e5)<=7) oWeek++;
         }
       });
     });
+    r.mspNow=mNow; r.mspNext=mNext; r.mspLate=mLate;
+    r.broken=broken; r.notBroken=notBroken;
+    r.ordOpen=oOpen; r.ordDone=oDone; r.ordLate=oLate; r.ordWeek=oWeek; r.ordMonth=oMonth;
+    // יחס כיסוי: כמה ממשימות הלו"ז השבוע קיבלו פירוק
+    r.coverage = mNow ? Math.round(broken/mNow*100) : null;
+    // פעילות חודשית
+    const msgs30=(messages.filter(m=>m.project_id===r.id&&m.sent_at>=MONTH_AGO)).length;
+    r.msgs30=msgs30;
+    r.activity = r.allTasks + msgs30 + oOpen + oDone;
   });
+
+  const ordLate=rows.reduce((s,r)=>s+r.ordLate,0);
+  const ordWeek=rows.reduce((s,r)=>s+r.ordWeek,0);
 
   const tot={
     projects:rows.length,
@@ -2828,33 +2882,57 @@ async function renderDashScreen(){
     <div style="font-size:11px;color:var(--tx3);margin-top:4px">${label}</div></div>`;
 
   const card=r=>{
-    const pctDone=r.allTasks?Math.round(r.allDone/r.allTasks*100):0;
     const upd=r.updated?new Date(r.updated).toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit'}):'—';
+    // חיווי כיסוי: יחס לו"ז ↔ תוכנית עבודה
+    let covBadge='';
+    if(r.mspNow){
+      const c=r.coverage;
+      const col = c>=90?'var(--gn)' : c>=50?'var(--am)' : 'var(--rd)';
+      const bg  = c>=90?'var(--gn-bg)' : c>=50?'var(--am-bg)' : 'var(--rd-bg)';
+      covBadge=`<span style="background:${bg};color:${col};padding:2px 8px;border-radius:5px;font-weight:600">כיסוי ${c}%</span>`;
+    }
+    const line=(icon,label,val)=>`<div style="display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0">
+        <span style="width:16px">${icon}</span>
+        <span style="color:var(--tx3);min-width:62px">${label}</span>
+        <span style="flex:1">${val}</span></div>`;
+    const pill=(txt,color,bg)=>`<span style="background:${bg||'var(--s2)'};color:${color||'var(--tx)'};padding:1px 7px;border-radius:5px;font-size:11px;margin-inline-end:4px">${txt}</span>`;
+
     return `<div onclick="openProjectFromDash('${esc(r.id).replace(/'/g,"\\'")}')"
       style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:15px 16px;cursor:pointer;transition:border-color .15s,transform .1s"
       onmouseover="this.style.borderColor='var(--brand-gold)';this.style.transform='translateY(-1px)'"
       onmouseout="this.style.borderColor='var(--bd)';this.style.transform=''">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="font-size:16px;font-weight:600">🏢 ${esc(r.name)}</div>
-        <div style="font-size:11px;color:var(--tx3)">עודכן ${upd}</div>
+        <div style="display:flex;align-items:center;gap:7px">
+          ${covBadge}
+          <span style="font-size:11px;color:var(--tx3)">עודכן ${upd}</span>
+        </div>
       </div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap;font-size:11px;margin-bottom:9px">
-        <span style="background:var(--am-bg);color:var(--am);padding:2px 7px;border-radius:5px">השבוע: <b>${r.open}</b>/${r.tasks}</span>
-        <span style="background:var(--rd-bg);color:var(--rd);padding:2px 7px;border-radius:5px">כללי: <b>${r.allOpen}</b>/${r.allTasks}</span>
-        <span style="background:var(--s2);padding:2px 7px;border-radius:5px">הקצאות: <b>${r.workers}</b></span>
-        <span style="background:var(--s2);padding:2px 7px;border-radius:5px">קבלנים פעילים: <b>${r.activeContr}</b>/${r.contractors}</span>
-        <span style="background:var(--s2);padding:2px 7px;border-radius:5px">הודעות: <b>${r.msgsWeek}</b></span>
-      </div>
-      <div style="height:5px;background:var(--s2);border-radius:3px;overflow:hidden">
-        <div style="height:100%;width:${pctDone}%;background:var(--gn);transition:width .3s"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:5px">
-        <span style="font-size:10px;color:var(--tx3)">${pctDone}% הושלמו (כלל השבועות)</span>
-        <span style="font-size:10px;color:var(--bl);font-weight:600">פתח ←</span>
-      </div>
+
+      ${line('📅','לוח זמנים',
+         pill(`${r.mspNow} השבוע`,'var(--bl)','var(--bl-bg)')+
+         pill(`${r.mspNext} הבא`)+
+         (r.mspLate?pill(`⚠️ ${r.mspLate} בפיגור`,'var(--rd)','var(--rd-bg)'):''))}
+
+      ${line('📋','תוכנית',
+         pill(`${r.open} פתוחות השבוע`,'var(--am)','var(--am-bg)')+
+         pill(`${r.tasks} מתוכננות`)+
+         (r.notBroken?pill(`${r.notBroken} לו"ז לא פורקו`,'var(--rd)','var(--rd-bg)'):''))}
+
+      ${line('📦','הזמנות',
+         (r.ordOpen?pill(`${r.ordOpen} פתוחות`):pill('אין'))+
+         (r.ordDone?pill(`${r.ordDone} סופקו`,'var(--gn)','var(--gn-bg)'):'')+
+         (r.ordLate?pill(`🔴 ${r.ordLate}`,'var(--rd)','var(--rd-bg)'):'')+
+         (r.ordWeek?pill(`🟠 ${r.ordWeek}`,'#E67E22','var(--am-bg)'):''))}
+
+      ${line('👷','צוות',
+         pill(`${r.workers} הקצאות פועלים`)+
+         pill(`${r.activeContr}/${r.contractors} קבלנים פעילים`)+
+         (r.msgsWeek?pill(`${r.msgsWeek} הודעות`):''))}
     </div>`;
   };
 
+  window._dashRows=rows;
   el.innerHTML=`
     <div style="max-width:1200px;margin:0 auto;padding:20px 18px 40px">
       <div style="margin-bottom:18px">
@@ -2872,28 +2950,25 @@ async function renderDashScreen(){
         <span style="font-size:18px;color:#E67E22">←</span>
       </div>`:''}
 
-      <div style="font-size:12px;font-weight:600;color:var(--brand-gold);margin:0 0 6px">📅 לוח זמנים (MSP) · 📦 הזמנות</div>
-      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px">
-        ${kpiWeek('משימות לו״ז',mspNow,'שבוע נוכחי','var(--bl)')}
-        ${kpiWeek('משימות לו״ז',mspNext,'שבוע הבא','var(--bl)')}
-        ${kpiWeek('הזמנות',ordNow,'שבוע נוכחי',ordNow?'#E67E22':'var(--tx3)')}
-        ${kpiWeek('הזמנות',ordNext,'שבוע הבא',ordNext?'var(--am)':'var(--tx3)')}
-      </div>
-
-      <div style="font-size:12px;font-weight:600;color:var(--tx2);margin:0 0 6px">📋 תוכנית עבודה (מנהלי עבודה)</div>
-      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px">
-        ${kpi('פרויקטים',tot.projects)}
-        ${kpi('פתוחות — השבוע',tot.open,'var(--am)')}
-        ${kpi('פתוחות — כללי',tot.allOpen,'var(--rd)')}
-        ${kpi('הקצאות פועלים',tot.workers,'var(--gn)')}
-        ${kpi('קבלנים פעילים',tot.activeContr)}
-        ${kpi('הודעות (7 ימים)',tot.msgsWeek)}
-      </div>
-
       <div style="font-size:13px;color:var(--tx3);margin-bottom:8px">הפרויקטים שלך — לחץ לפתיחה</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:11px;margin-bottom:24px">
         ${rows.length?rows.map(card).join(''):'<div style="color:var(--tx3);padding:30px;text-align:center;grid-column:1/-1">אין פרויקטים. פתח פרויקט חדש דרך 👥 ניהול</div>'}
       </div>
+
+      ${rows.length>1?`
+      <div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:15px 16px;margin-bottom:22px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px;flex-wrap:wrap;gap:8px">
+          <div style="font-size:14px;font-weight:600">📊 השוואה בין פרויקטים</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            ${[['activity','פעילות'],['ordOpen','הזמנות'],['workers','הקצאות'],['msgs30','הודעות']]
+              .map(([k,l])=>`<button onclick="dashChart('${k}')"
+                style="padding:4px 11px;border-radius:14px;border:1px solid var(--bd);cursor:pointer;font-size:12px;
+                background:${(window._dashMetric||'activity')===k?'var(--brand-gold)':'var(--s2)'};
+                color:${(window._dashMetric||'activity')===k?'#fff':'var(--tx)'}">${l}</button>`).join('')}
+          </div>
+        </div>
+        <div id="dash-chart"></div>
+      </div>`:''}
 
       <div style="display:flex;gap:14px;flex-wrap:wrap">
         <div style="flex:1;min-width:280px">
@@ -2917,6 +2992,8 @@ async function renderDashScreen(){
         </div>
       </div>
     </div>`;
+
+  setTimeout(()=>{try{dashChart();}catch(e){}},50);
 }
 
 /* boot: auth first, then app */
