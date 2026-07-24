@@ -1672,6 +1672,14 @@ async function saveToCloud(){
 async function loadFromCloud(pn){
   if(!pn||!pn.trim())return false;
   try{
+    // v26: טעינת ההרשאה של המשתמש בפרויקט זה
+    try{
+      const uid=(await sbClient.auth.getUser()).data.user.id;
+      const pm=await sbSelect('project_members?project_id=eq.'+encodeURIComponent(pn.trim())+'&user_id=eq.'+uid+'&select=permission');
+      window.myPermission=(pm&&pm[0])?pm[0].permission:null;
+      const canImp = (typeof isOwner!=='undefined' && isOwner) || window.myPermission==='manager';
+      document.body.classList.toggle('no-msp-import',!canImp);
+    }catch(e){ window.myPermission=null; }
     const res=await fetch(SB_URL+'/rest/v1/projects?id=eq.'+encodeURIComponent(pn.trim())+'&select=data',{headers:sbAuthHdr()});
     if(!res.ok)return false;
     const rows=await res.json();
@@ -2072,8 +2080,9 @@ async function onAuthenticated(user){
   // passed gate — hide auth, show app
   document.getElementById('auth-gate').style.display='none';
   if(isOwner){['btn-admin','btn-dash','btn-restore'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='';});}
-  // v26: רק owner/מנהל פרויקט מייבא לו"ז
-  document.body.classList.toggle('no-msp-import',!isOwner);
+  // v26: רק owner או מנהל פרויקט מייבא לו"ז
+  const canImport = isOwner || (window.myPermission==='manager');
+  document.body.classList.toggle('no-msp-import',!canImport);
   window._landOnDash=isOwner;
   window.SB_JWT=(await sbClient.auth.getSession()).data.session.access_token;
   await bootApp();
@@ -2170,7 +2179,8 @@ async function togglePerms(projId){
     const m=members.find(x=>x.user_id===p.id);
     let badge,action;
     if(isMember){
-      const rl=m.permission==='editor'?'מנהל עבודה':'קבלן (צפייה)';
+      const RL={manager:'מנהל פרויקט',editor:'מנהל עבודה',viewer:'קבלן (צפייה)'};
+      const rl=RL[m.permission]||m.permission;
       badge='<span style="background:var(--gn-bg);color:var(--gn);padding:2px 8px;border-radius:6px;font-size:11px">'+rl+'</span>';
       action=`<button class="btn btn-sm" style="color:var(--rd);border-color:var(--rd-b)" onclick="revokeMember('${m.id}','${encodeURIComponent(projId)}')">בטל</button>`;
     }else{
@@ -2194,7 +2204,8 @@ async function togglePerms(projId){
     const m=members.find(x=>x.user_id===p.id);
     let badge,action;
     if(isMember){
-      const rl=m.permission==='editor'?'מנהל עבודה':'קבלן (צפייה)';
+      const RL={manager:'מנהל פרויקט',editor:'מנהל עבודה',viewer:'קבלן (צפייה)'};
+      const rl=RL[m.permission]||m.permission;
       badge='<span style="background:var(--gn-bg);color:var(--gn);padding:2px 8px;border-radius:6px;font-size:11px">'+rl+'</span>';
       action=`<button class="btn btn-sm" style="color:var(--rd);border-color:var(--rd-b)" onclick="revokeMember('${m.id}','${encodeURIComponent(projId)}')">הסר</button>`;
     }else{
