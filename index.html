@@ -85,6 +85,8 @@ html[data-theme="light"] .cal-table td > div{background:#FFFFFF!important;color:
 html[data-theme="light"] .cal-table td > div .cal-task-txt{color:#1A1A1A!important}
 body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh;font-size:15px}
 .app-hdr{background:var(--brand);border-bottom:2px solid var(--brand-gold);padding:8px 18px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.app-hdr .logo{flex-shrink:0}
+.app-hdr .hdr-acts{flex-wrap:wrap}
 .logo{font-size:15px;font-weight:700;color:#fff;display:flex;align-items:center;gap:10px}.logo img{height:34px;width:auto}.logo span{color:var(--brand-gold)}
 .proj-inp{font-size:14px;font-weight:500;background:transparent;border:none;border-bottom:1.5px solid var(--bd2);outline:none;padding:2px 4px;font-family:var(--fn);min-width:180px;color:var(--tx)}
 .proj-inp:focus{border-bottom-color:var(--bl)}
@@ -3886,13 +3888,35 @@ function ordRender(taskId) {
 // ---------- מסך ריכוז כל ההזמנות ----------
 function ordCenter() { ordCenterFrom(ordAll()); }
 
+let _ordProjFilter = '';   // '' = הכל
+
 function ordCenterFrom(src) {
-  const all = (src || []).map(o => Object.assign({}, o, { _u: ordUrgency(o) }));
+  window._ordSrc = src || [];
+  ordCenterRender();
+}
+
+function ordSetProj(p) { _ordProjFilter = p; ordCenterRender(); }
+
+function ordCenterRender() {
+  const src = window._ordSrc || [];
+  let all = src.map(o => Object.assign({}, o, { _u: ordUrgency(o) }));
+  const projs = [...new Set(all.map(o => o._proj).filter(Boolean))];
+  if (_ordProjFilter) all = all.filter(o => o._proj === _ordProjFilter);
+
   const rank = { late: 0, week: 1, month: 2, ok: 3, ordered: 4, done: 5, none: 6 };
   all.sort((a, b) => (rank[a._u.k] - rank[b._u.k]) || (a.deadline || '').localeCompare(b.deadline || ''));
   const cnt = k => all.filter(o => o._u.k === k).length;
 
-  const rows = all.length ? all.map(o => `
+  // קיבוץ לפי פרויקט
+  const byProj = {};
+  all.forEach(o => { const k = o._proj || '—'; (byProj[k] = byProj[k] || []).push(o); });
+  const pKeys = Object.keys(byProj).sort((a, b) => {
+    const la = byProj[a].filter(x => x._u.k === 'late').length;
+    const lb = byProj[b].filter(x => x._u.k === 'late').length;
+    return lb - la;
+  });
+
+  const row = o => `
     <tr style="border-bottom:1px solid var(--bd);cursor:pointer" onclick="ordRender('${o._taskId}')">
       <td style="padding:7px 5px"><span style="color:${o._u.c};font-weight:600;font-size:12px">${o._u.t}</span></td>
       <td style="padding:7px 5px;font-weight:600;font-size:13px">${o.material}</td>
@@ -3900,18 +3924,51 @@ function ordCenterFrom(src) {
       <td style="padding:7px 5px;font-size:12px">${o.supplier || '—'}</td>
       <td style="padding:7px 5px;white-space:nowrap"><strong style="color:${o._u.c};font-size:12px">${mspFmt(o.deadline)}</strong></td>
       <td style="padding:7px 5px;font-size:12px;color:var(--tx3)">${mspFmt(o.needDate)}</td>
-      <td style="padding:7px 5px;font-size:12px">${o._taskName}<div style="font-size:11px;color:var(--brand-gold)">📍 ${o._parent || '—'}${o._proj?` · ${o._proj}`:''}</div></td>
+      <td style="padding:7px 5px;font-size:12px">${o._taskName}<div style="font-size:11px;color:var(--brand-gold)">📍 ${o._parent || '—'}</div></td>
       <td style="padding:7px 5px;font-size:12px">${o.status}</td>
-    </tr>`).join('') :
-    `<tr><td colspan="8" style="padding:34px;text-align:center;color:var(--tx3)">אין הזמנות רשומות.<br><span style="font-size:12px">הוסף הזמנות דרך 📅 לו"ז ← משימה ← 📦 הזמנות</span></td></tr>`;
+    </tr>`;
+
+  const head = `<thead style="background:var(--bg2)"><tr>
+      <th style="padding:7px 5px;font-size:12px">מצב</th><th style="padding:7px 5px;font-size:12px">חומר</th>
+      <th style="padding:7px 5px;font-size:12px">כמות</th><th style="padding:7px 5px;font-size:12px">ספק</th>
+      <th style="padding:7px 5px;font-size:12px">⏰ להזמין עד</th><th style="padding:7px 5px;font-size:12px">נדרש ל-</th>
+      <th style="padding:7px 5px;text-align:right;font-size:12px">משימה</th><th style="padding:7px 5px;font-size:12px">סטטוס</th>
+    </tr></thead>`;
+
+  // תצוגה: אם יש כמה פרויקטים — מקובץ. אחרת טבלה אחת
+  const showGrouped = pKeys.length > 1;
+  const body = all.length ? (showGrouped ? pKeys.map(pk => {
+    const g = byProj[pk];
+    const nl = g.filter(x => x._u.k === 'late').length, nw = g.filter(x => x._u.k === 'week').length;
+    return `
+    <div style="margin-bottom:12px;border:1px solid var(--bd);border-radius:10px;overflow:hidden">
+      <div style="background:var(--bg2);padding:9px 13px;display:flex;align-items:center;gap:9px">
+        <span style="font-weight:700;font-size:14px;color:var(--brand-gold)">🏢 ${pk}</span>
+        <span style="background:var(--sf);padding:1px 9px;border-radius:10px;font-size:12px">${g.length}</span>
+        ${nl ? `<span style="color:var(--rd);font-size:11px;font-weight:600">🔴 ${nl}</span>` : ''}
+        ${nw ? `<span style="color:#E67E22;font-size:11px;font-weight:600">🟠 ${nw}</span>` : ''}
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">${head}<tbody>${g.map(row).join('')}</tbody></table>
+    </div>`;
+  }).join('') : `<div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">${head}<tbody>${all.map(row).join('')}</tbody></table></div>`)
+    : `<div style="padding:34px;text-align:center;color:var(--tx3)">אין הזמנות.<br><span style="font-size:12px">הוסף דרך 📅 לו"ז ← משימה ← 📦 הזמנות</span></div>`;
+
+  const chip = (v, lbl, act) => `<button onclick="ordSetProj('${v.replace(/'/g,"\\'")}')"
+    style="padding:5px 12px;border-radius:16px;border:1px solid var(--bd);cursor:pointer;font-size:12px;font-weight:${act?600:400};
+    background:${act?'var(--brand-gold)':'var(--bg2)'};color:${act?'#fff':'var(--tx)'}">${lbl}</button>`;
 
   document.getElementById('modal-root').innerHTML = `
   <div class="modal-overlay" onclick="if(this===event.target)closeModal()">
     <div class="modal" style="max-width:1000px;max-height:92vh;overflow-y:auto">
       <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd);padding-bottom:10px;margin-bottom:12px">
-        <div style="font-size:17px;font-weight:700">📦 ריכוז הזמנות · ארגון אתר</div>
+        <div style="font-size:17px;font-weight:700">📦 ריכוז הזמנות</div>
         <button class="btn btn-sm" onclick="closeModal()">✕</button>
       </div>
+      ${projs.length > 1 ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+        ${chip('', 'כל הפרויקטים', !_ordProjFilter)}
+        ${projs.map(p => chip(p, p, _ordProjFilter === p)).join('')}
+      </div>` : ''}
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
         ${[['🔴 באיחור', cnt('late'), 'var(--rd)'], ['🟠 השבוע', cnt('week'), '#E67E22'],
            ['📦 הוזמן', cnt('ordered'), 'var(--bl)'], ['✓ סופק', cnt('done'), 'var(--gr)']]
@@ -3919,21 +3976,7 @@ function ordCenterFrom(src) {
             <div style="font-size:20px;font-weight:700;color:${c}">${v}</div>
             <div style="font-size:11px;color:var(--tx3)">${l}</div></div>`).join('')}
       </div>
-      <div style="overflow-x:auto;border:1px solid var(--bd);border-radius:8px">
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead style="background:var(--bg2)"><tr>
-            <th style="padding:7px 5px;font-size:12px">מצב</th>
-            <th style="padding:7px 5px;font-size:12px">חומר</th>
-            <th style="padding:7px 5px;font-size:12px">כמות</th>
-            <th style="padding:7px 5px;font-size:12px">ספק</th>
-            <th style="padding:7px 5px;font-size:12px">⏰ להזמין עד</th>
-            <th style="padding:7px 5px;font-size:12px">נדרש ל-</th>
-            <th style="padding:7px 5px;text-align:right;font-size:12px">משימה</th>
-            <th style="padding:7px 5px;font-size:12px">סטטוס</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
+      ${body}
       <div style="font-size:11px;color:var(--tx3);margin-top:8px">💡 לחיצה על שורה פותחת את ההזמנות של המשימה</div>
     </div>
   </div>`;
