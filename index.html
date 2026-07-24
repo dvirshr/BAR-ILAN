@@ -11,10 +11,10 @@
   --bg:#2A2A2A;--sf:#242424;--s2:#2E2E2E;--s3:#363636;
   --bd:#4A4A4A;--bd2:#666666;
   --tx:#F0F0F0;--tx2:#CCCCCC;--tx3:#888888;
-  --bl:#C8963C;--bl-bg:#FBF3E4;--bl-b:#D4A84B;
-  --gn:#3B6D11;--gn-bg:#EAF3DE;--gn-b:#639922;
-  --am:#854F0B;--am-bg:#FAEEDA;--am-b:#FAC775;
-  --rd:#993C1D;--rd-bg:#FAECE7;--rd-b:#E24B4A;
+  --bl:#E0AC55;--bl-bg:rgba(200,150,60,.20);--bl-b:#D4A84B;
+  --gn:#8BC34A;--gn-bg:rgba(99,153,34,.20);--gn-b:#639922;
+  --am:#F0B849;--am-bg:rgba(250,199,117,.20);--am-b:#FAC775;
+  --rd:#EF6B5E;--rd-bg:rgba(226,75,74,.20);--rd-b:#E24B4A;
   --brand:#1A1A1A;--brand-gold:#C8963C;
   --r:8px;--rl:12px;--fn:'Heebo',sans-serif;
 }
@@ -23,6 +23,12 @@ body.on-dash .proj-inp,body.on-dash .itabs,body.on-dash .sum-tab{display:none!im
 body.on-dash #hdr-proj-name{display:none}
 #dash-screen{padding:0;margin:0}
 body.on-dash #btn-msp,body.on-dash #btn-sched{display:none!important}
+
+
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal-backdrop .modal{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:18px;max-height:90vh;overflow-y:auto;width:100%}
+.modal-backdrop .modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.modal-backdrop .modal-body{font-size:14px}
 
 /* ── LIGHT THEME ── */
 html[data-theme="light"]{
@@ -36,7 +42,7 @@ html[data-theme="light"]{
   --brand:#2A2A2A;--brand-gold:#C8963C;
 }
 html[data-theme="light"] body{background:var(--bg);color:var(--tx)}
-html[data-theme="light"] .app-hdr{box-shadow:0 2px 8px rgba(0,0,0,.12)}
+html[data-theme="light"] .app-hdr{position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 /* header stays DARK in light mode → its contents must stay LIGHT */
 html[data-theme="light"] .proj-inp{color:#F0F0F0!important;border-bottom-color:rgba(255,255,255,.35)!important}
 html[data-theme="light"] .proj-inp::placeholder{color:rgba(255,255,255,.5)!important}
@@ -206,7 +212,7 @@ body{font-family:var(--fn);background:var(--bg);color:var(--tx);min-height:100vh
 .pbadge{font-size:9px;padding:1px 5px;border-radius:6px;font-weight:500;flex-shrink:0}
 .p-done{background:var(--gn-bg);color:var(--gn)}
 .p-wip{background:var(--bl-bg);color:var(--bl)}
-.p-todo{background:#4A4A4A;color:#AAAAAA}
+.p-todo{background:var(--s3);color:var(--tx2)}
 .wk-stats-row{display:flex;gap:8px;padding:6px 8px;background:var(--s2);border-top:1px solid var(--bd);font-size:10px;color:var(--tx3)}
 .wk-notes{width:100%;min-height:38px;font-size:10px;font-family:var(--fn);color:var(--tx);background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:5px 7px;resize:vertical;outline:none;margin-top:5px}
 .wk-notes:focus{border-color:var(--bl);background:var(--sf)}
@@ -2741,13 +2747,15 @@ async function renderDashScreen(){
         <span style="font-size:18px;color:#E67E22">←</span>
       </div>`:''}
 
-      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:12px">
-        ${kpiWeek('📅 משימות לו״ז',mspNow,'שבוע נוכחי','var(--bl)')}
-        ${kpiWeek('📅 משימות לו״ז',mspNext,'שבוע הבא','var(--bl)')}
-        ${kpiWeek('📦 הזמנות',ordNow,'שבוע נוכחי',ordNow?'#E67E22':'var(--tx3)')}
-        ${kpiWeek('📦 הזמנות',ordNext,'שבוע הבא',ordNext?'var(--am)':'var(--tx3)')}
+      <div style="font-size:12px;font-weight:600;color:var(--brand-gold);margin:0 0 6px">📅 לוח זמנים (MSP) · 📦 הזמנות</div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:14px">
+        ${kpiWeek('משימות לו״ז',mspNow,'שבוע נוכחי','var(--bl)')}
+        ${kpiWeek('משימות לו״ז',mspNext,'שבוע הבא','var(--bl)')}
+        ${kpiWeek('הזמנות',ordNow,'שבוע נוכחי',ordNow?'#E67E22':'var(--tx3)')}
+        ${kpiWeek('הזמנות',ordNext,'שבוע הבא',ordNext?'var(--am)':'var(--tx3)')}
       </div>
 
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);margin:0 0 6px">📋 תוכנית עבודה (מנהלי עבודה)</div>
       <div style="display:flex;gap:9px;flex-wrap:wrap;margin-bottom:22px">
         ${kpi('פרויקטים',tot.projects)}
         ${kpi('פתוחות — השבוע',tot.open,'var(--am)')}
@@ -3206,10 +3214,21 @@ function openSchedScreen() {
   renderSchedScreen();
 }
 
-function dashOpenOrders(){
-  const ps=(window.mspTasks||[]).length;
-  if(!ps){ alert('פתח פרויקט עם לוח זמנים כדי לראות הזמנות.'); return; }
-  if(typeof ordCenter==='function') ordCenter();
+async function dashOpenOrders(){
+  // אוסף הזמנות מכל הפרויקטים (בדשבורד אין פרויקט טעון)
+  try{
+    const projects=await sbSelect('projects?select=id,name,data');
+    const all=[];
+    (projects||[]).forEach(p=>{
+      ((p.data||{}).mspTasks||[]).forEach(t=>{
+        (t.orders||[]).forEach((o,i)=>all.push(Object.assign({},o,{
+          _taskId:t.id,_taskName:t.name,_parent:t.parent,_idx:i,_proj:p.name
+        })));
+      });
+    });
+    if(!all.length){ alert('אין הזמנות רשומות באף פרויקט.'); return; }
+    ordCenterFrom(all);
+  }catch(e){ alert('שגיאה בטעינת הזמנות: '+e.message); }
 }
 function closeSchedScreen() {
   const scr = document.getElementById('sched-screen'); if (scr) scr.style.display = 'none';
@@ -3865,8 +3884,10 @@ function ordRender(taskId) {
 }
 
 // ---------- מסך ריכוז כל ההזמנות ----------
-function ordCenter() {
-  const all = ordAll().map(o => Object.assign({}, o, { _u: ordUrgency(o) }));
+function ordCenter() { ordCenterFrom(ordAll()); }
+
+function ordCenterFrom(src) {
+  const all = (src || []).map(o => Object.assign({}, o, { _u: ordUrgency(o) }));
   const rank = { late: 0, week: 1, month: 2, ok: 3, ordered: 4, done: 5, none: 6 };
   all.sort((a, b) => (rank[a._u.k] - rank[b._u.k]) || (a.deadline || '').localeCompare(b.deadline || ''));
   const cnt = k => all.filter(o => o._u.k === k).length;
@@ -3879,7 +3900,7 @@ function ordCenter() {
       <td style="padding:7px 5px;font-size:12px">${o.supplier || '—'}</td>
       <td style="padding:7px 5px;white-space:nowrap"><strong style="color:${o._u.c};font-size:12px">${mspFmt(o.deadline)}</strong></td>
       <td style="padding:7px 5px;font-size:12px;color:var(--tx3)">${mspFmt(o.needDate)}</td>
-      <td style="padding:7px 5px;font-size:12px">${o._taskName}<div style="font-size:11px;color:var(--brand-gold)">📍 ${o._parent || '—'}</div></td>
+      <td style="padding:7px 5px;font-size:12px">${o._taskName}<div style="font-size:11px;color:var(--brand-gold)">📍 ${o._parent || '—'}${o._proj?` · ${o._proj}`:''}</div></td>
       <td style="padding:7px 5px;font-size:12px">${o.status}</td>
     </tr>`).join('') :
     `<tr><td colspan="8" style="padding:34px;text-align:center;color:var(--tx3)">אין הזמנות רשומות.<br><span style="font-size:12px">הוסף הזמנות דרך 📅 לו"ז ← משימה ← 📦 הזמנות</span></td></tr>`;
